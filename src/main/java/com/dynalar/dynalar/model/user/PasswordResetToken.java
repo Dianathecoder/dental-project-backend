@@ -1,6 +1,5 @@
 package com.dynalar.dynalar.model.user;
 
-
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -26,30 +25,13 @@ public class PasswordResetToken {
 
     public PasswordResetToken() {}
 
-    public Long getId() { 
-    	return id; 
-    	}
-    public User getUser() { 
-    	return user; }
-    public void setUser(User user) { 
-    	this.user = user; 
-    	}
-    public String getToken() { 
-    	return token; 
-    	}
-    public void setToken(String token) { 
-    	this.token = token; 
-    	}
-    public LocalDateTime getExpiresAt() {
-    	return expiresAt;
-    	}
-    public void setExpiresAt(LocalDateTime expiresAt) { 
-    	this.expiresAt = expiresAt; 
-    	}
-    public boolean isUsed() { 
-    	return used; 
-    	}
-    public void setUsed(boolean used) { 
-    	this.used = used;
-    	}
+    public Long getId() { return id; }
+    public User getUser() { return user; }
+    public void setUser(User user) { this.user = user; }
+    public String getToken() { return token; }
+    public void setToken(String token) { this.token = token; }
+    public LocalDateTime getExpiresAt() { return expiresAt; }
+    public void setExpiresAt(LocalDateTime expiresAt) { this.expiresAt = expiresAt; }
+    public boolean isUsed() { return used; }
+    public void setUsed(boolean used) { this.used = used; }
 }
