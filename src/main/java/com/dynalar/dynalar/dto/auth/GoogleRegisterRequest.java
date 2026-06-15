@@ -1,6 +1,7 @@
 package com.dynalar.dynalar.dto.auth;
 
-public class GoogleAuthRequest {
+public class GoogleRegisterRequest {
+
 	 private String idToken;
 
 	    public String getIdToken() { 
