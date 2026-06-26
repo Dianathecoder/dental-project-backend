@@ -1,6 +1,5 @@
 package com.dynalar.dynalar.security;
 
-import com.dynalar.dynalar.respository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -8,22 +7,19 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.List;
 
-
-//Filtro que se ejecuta en cada petición. Si el token es válido, saca el email, busca el usuario en BD y lo mete en el contexto de seguridad de Spring
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
-    private final UserRepository userRepo;
 
-    public JwtAuthFilter(JwtService jwtService, UserRepository userRepo) {
+    public JwtAuthFilter(JwtService jwtService) {
         this.jwtService = jwtService;
-        this.userRepo = userRepo;
     }
 
     @Override
@@ -42,20 +38,18 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         if (jwtService.isValid(token)) {
             String email = jwtService.extractEmail(token);
-            userRepo.findByEmail(email).ifPresent(user -> {
-                UserDetails userDetails = org.springframework.security.core.userdetails.User
-                        .withUsername(user.getEmail())
-                        .password("")
-                        .authorities(List.of(new SimpleGrantedAuthority("ROLE_" + 
-                            (user.getRole() != null ? user.getRole() : "USER"))))
-                        .build();
+            String role  = jwtService.extractRole(token);
 
-                UsernamePasswordAuthenticationToken auth =
-                        new UsernamePasswordAuthenticationToken(
-                                userDetails, null, userDetails.getAuthorities());
+            UserDetails userDetails = User.withUsername(email)
+                    .password("")
+                    .authorities(List.of(new SimpleGrantedAuthority("ROLE_" + (role != null ? role : "USER"))))
+                    .build();
 
-                SecurityContextHolder.getContext().setAuthentication(auth);
-            });
+            UsernamePasswordAuthenticationToken auth =
+                    new UsernamePasswordAuthenticationToken(
+                            userDetails, null, userDetails.getAuthorities());
+
+            SecurityContextHolder.getContext().setAuthentication(auth);
         }
 
         chain.doFilter(request, response);
