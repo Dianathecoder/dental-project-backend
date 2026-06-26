@@ -14,39 +14,57 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Inheritance;
 import jakarta.persistence.InheritanceType;
 import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "user")
 @Inheritance(strategy = InheritanceType.JOINED)
+@Getter
+@Setter
+@NoArgsConstructor
 public class User {
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
-	
-	private String name;
-	private String surname;
-	
-	@Column(unique = true, nullable = false)
-	private String email;
-	 @Column(name = "password_hash")
-	private String password;
-	 
-	
-	private String avatarUrl;
-	
-	@Enumerated(EnumType.STRING)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false)
+    private String name;
+
+    private String surname;
+
+    @Column(unique = true, nullable = false)
+    private String email;
+
+    @Column(name = "password_hash")
+    private String password;                  // null si es usuario Google
+
+    private String avatarUrl;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role = Role.USER;            // ← Antes era String "USER"
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private Provider provider = Provider.LOCAL;
-	
-	 private String googleId;
-	    private boolean emailVerified = false;
-	    private String preferredLanguage = "es";
 
-	@CreationTimestamp
-	private LocalDateTime createdAt;
+    private String googleId;
 
-	private String role;
-	public enum Provider { LOCAL, GOOGLE }
+    @Column(nullable = false)
+    private boolean emailVerified = false;
+
+    @Column(nullable = false)
+    private String preferredLanguage = "es";
+
+    @CreationTimestamp
+    @Column(updatable = false)
+    private LocalDateTime createdAt;
+
+    public enum Provider { LOCAL, GOOGLE }
+
 
 	
 		public User() {
@@ -112,10 +130,10 @@ public class User {
 	    public LocalDateTime getCreatedAt() { 
 	    	return createdAt; 
 	    }
-	    public String getRole() { 
+	    public Role getRole() { 
 	    	return role; 
 	    }
-	    public void setRole(String role) { 
+	    public void setRole(Role role) { 
 	    	this.role = role; 
 	    }
 

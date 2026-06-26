@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.dynalar.dynalar.model.user.Dentist;
+import com.dynalar.dynalar.model.user.Role;
 import com.dynalar.dynalar.respository.DentistRepository;
 
 @RestController
@@ -29,7 +30,7 @@ public class DentistController {
 	@PostMapping()
 	public ResponseEntity<Dentist> createDentist(@RequestBody Dentist dentist) {
 		try {
-			dentist.setRole("DENTIST");
+			dentist.setRole(Role.DENTIST);
 			Dentist newDentist = dentistRepository.save(dentist);
 			return ResponseEntity.status(HttpStatus.CREATED).body(newDentist);
 		} catch (Exception e) {

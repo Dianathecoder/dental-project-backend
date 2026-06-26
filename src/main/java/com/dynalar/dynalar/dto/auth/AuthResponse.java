@@ -1,14 +1,16 @@
 package com.dynalar.dynalar.dto.auth;
 
+import com.dynalar.dynalar.model.user.Role;
+
 public class AuthResponse {
 
     private String token;
     private Long userId;
     private String name;
     private String surname;
-    private String role;
+    private Role role;
 
-    public AuthResponse(String token, Long userId, String name, String surname, String role) {
+    public AuthResponse(String token, Long userId, String name, String surname, Role role) {
         this.token = token;
         this.userId = userId;
         this.name = name;
@@ -20,5 +22,5 @@ public class AuthResponse {
     public Long getUserId() { return userId; }
     public String getName() { return name; }
     public String getSurname() { return surname; }
-    public String getRole() { return role; }
+    public Role getRole() { return role; }
 }
