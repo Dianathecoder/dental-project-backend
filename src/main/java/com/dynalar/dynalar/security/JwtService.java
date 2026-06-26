@@ -26,7 +26,7 @@ public class JwtService {
                 .subject(user.getEmail())
                 .claim("userId", user.getId())
                 .claim("name", user.getName())
-                .claim("role", user.getRole())
+                .claim("role", user.getRole().name()) // guarda "USER", "ADMIN", "DENTIST"
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(getKey())
@@ -35,6 +35,9 @@ public class JwtService {
 
     public String extractEmail(String token) {
         return getClaims(token).getSubject();
+    }
+    public String extractRole(String token) {
+        return getClaims(token).get("role", String.class);
     }
 
     public boolean isValid(String token) {
