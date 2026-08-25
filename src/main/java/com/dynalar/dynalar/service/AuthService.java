@@ -68,6 +68,7 @@ public class AuthService {
                 user.getId(),
                 user.getName(),
                 user.getSurname(),
+                user.getEmail(),
                 user.getRole()
         );
     }
@@ -86,6 +87,7 @@ public class AuthService {
                 user.getId(),
                 user.getName(),
                 user.getSurname(),
+                user.getEmail(),
                 user.getRole()
         );
     }
@@ -104,8 +106,8 @@ public class AuthService {
         GoogleIdToken.Payload payload = googleIdToken.getPayload();
         String googleId = payload.getSubject();
         String email = payload.getEmail();
-        String name = (String) payload.get("name");
-        String picture = (String) payload.get("picture");
+        String givenName = (String) payload.get("given_name"); // <-- Nombre
+        String familyName = (String) payload.get("family_name"); // <-- Apellido
 
         User user = userRepo.findByGoogleId(googleId)
                 .orElseGet(() -> userRepo.findByEmail(email)
@@ -117,12 +119,13 @@ public class AuthService {
                         .orElseGet(() -> {
                             User newUser = new User();
                             newUser.setEmail(email);
-                            newUser.setName(name != null ? name : email);
-                            newUser.setAvatarUrl(picture);
+                            newUser.setName(givenName != null ? givenName : email);
+                            newUser.setSurname(familyName != null ? familyName : "");
+                            newUser.setAvatarUrl((String) payload.get("picture"));
                             newUser.setGoogleId(googleId);
                             newUser.setProvider(User.Provider.GOOGLE);
                             newUser.setEmailVerified(true);
-                            newUser.setRole(Role.USER);
+                            newUser.setRole(Role.USER);             
                             return userRepo.save(newUser);
                         }));
 
@@ -131,6 +134,7 @@ public class AuthService {
                 user.getId(),
                 user.getName(),
                 user.getSurname(),
+                user.getEmail(),
                 user.getRole()
         );
     }
