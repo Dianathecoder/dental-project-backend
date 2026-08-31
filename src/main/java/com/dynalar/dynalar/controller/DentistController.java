@@ -7,6 +7,7 @@ import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -29,11 +30,12 @@ public class DentistController {
     @Autowired
     private DentistRepository dentistRepository;
     
-    // Necesitamos el repositorio de User para actualizar/buscar la información base
+  
     @Autowired
     private UserRepository userRepository;
 
     @PostMapping()
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_AUXILIAR')")
     public ResponseEntity<Dentist> createDentist(@RequestBody Dentist dentist) {
         try {
             // 1. Verificamos que se haya enviado el id del usuario base
@@ -98,7 +100,9 @@ public class DentistController {
         }
     }
 
+    // El Doctor NO tiene permiso
     @PutMapping("/update")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_AUXILIAR')")
     public ResponseEntity<Dentist> updateDentist(@RequestBody Dentist updatedDentist) {
         try {
             Long id = updatedDentist.getId();
@@ -113,7 +117,7 @@ public class DentistController {
 
             Dentist existingDentist = existingOpt.get();
 
-            // 1. Actualizar los datos del usuario base si vienen incluidos
+            //Actualizar los datos del usuario 
             if (updatedDentist.getUser() != null) {
                 User existingUser = existingDentist.getUser();
                 User incomingUser = updatedDentist.getUser();
@@ -128,7 +132,7 @@ public class DentistController {
                 }
             }
 
-            // 2. Actualizar los horarios
+            // Actualizar los horarios.Solo Admin/Auxiliar
             existingDentist.setMondayMorning(updatedDentist.getMondayMorning());
             existingDentist.setMondayAfternoon(updatedDentist.getMondayAfternoon());
             existingDentist.setTuesdayMorning(updatedDentist.getTuesdayMorning());
@@ -140,12 +144,12 @@ public class DentistController {
             existingDentist.setFridayMorning(updatedDentist.getFridayMorning());
             existingDentist.setFridayAfternoon(updatedDentist.getFridayAfternoon());
 
-            // 3. Actualizar tratamientos
+            //Actualizar tratamientos
             if (updatedDentist.getTreatments() != null) {
                 existingDentist.setTreatments(updatedDentist.getTreatments());
             }
 
-            // 4. Guardar perfil de dentista
+         //Guardar tratamientos
             Dentist savedDentist = dentistRepository.save(existingDentist);
             return ResponseEntity.ok(savedDentist);
 
@@ -154,7 +158,6 @@ public class DentistController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteDentist(@PathVariable Long id) {
         try {
