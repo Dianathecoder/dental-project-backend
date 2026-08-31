@@ -3,6 +3,7 @@ package com.dynalar.dynalar.model.patient;
 import java.util.List;
 
 import com.dynalar.dynalar.model.odontogram.Odontogram;
+import com.dynalar.dynalar.model.user.User;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.CascadeType;
@@ -22,10 +23,7 @@ import com.dynalar.dynalar.model.Appointment;
 @Table(name = "patient")
 public class Patient {
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
-
+	
     private String name;
     private String lastName;
     private String email;
@@ -39,6 +37,15 @@ public class Patient {
     @Enumerated(EnumType.STRING)
     private Sex sex;
     
+    
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
+
+	@OneToOne
+    @JoinColumn(name = "usuario_id", referencedColumnName = "id", unique = true)
+    private User user;
+	
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "medical_record_id", referencedColumnName = "id")
     private MedicalRecord medicalRecord;
@@ -65,10 +72,13 @@ public class Patient {
 		this.lastName = lastName;
 		this.email = email;
 		this.dni = dni;
-		// Se crea solo un odontograma
 		this.odontogram = new Odontogram();
 		this.odontogram.setPatient(this);
     }
+    
+    public User getUser() { return user; }
+    public void setUser(User user) { this.user = user; }
+    
 
     public Sex getSex() {
         return sex;

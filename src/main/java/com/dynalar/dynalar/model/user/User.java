@@ -17,6 +17,9 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import jakarta.persistence.*;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "user")
@@ -39,14 +42,22 @@ public class User {
     private String email;
 
     @Column(name = "password_hash")
-    private String password;                  // null si es usuario Google
-
+    
+    private String password;                
+    
     private String avatarUrl;
 
+    
+    
+    @ElementCollection(targetClass = Role.class, fetch = FetchType.EAGER)
+    @CollectionTable(name = "usuario_rol", joinColumns = @JoinColumn(name = "usuario_id"))
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private Role role = Role.USER;            // ← Antes era String "USER"
+    @Column(name = "rol_name")
+    private Set<Role> roles = new HashSet<>();
 
+    
+    
+    
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Provider provider = Provider.LOCAL;
@@ -130,11 +141,12 @@ public class User {
 	    public LocalDateTime getCreatedAt() { 
 	    	return createdAt; 
 	    }
-	    public Role getRole() { 
-	    	return role; 
+	    public Set<Role> getRoles() {
+	        return roles;
 	    }
-	    public void setRole(Role role) { 
-	    	this.role = role; 
+
+	    public void setRoles(Set<Role> roles) {
+	        this.roles = roles;
 	    }
 
 	
