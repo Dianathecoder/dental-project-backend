@@ -11,10 +11,20 @@ import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.JoinColumn;
 
+import jakarta.persistence.*;
+
 @Entity
 @Table(name = "dentist")
-public class Dentist extends User {
+public class Dentist {
+	
+	@Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
+    @OneToOne
+    @JoinColumn(name = "usuario_id", referencedColumnName = "id", unique = true)
+    
+    private User user;
 	private Boolean mondayMorning;
 	private Boolean mondayAfternoon;
 	private Boolean tuesdayMorning;
@@ -27,14 +37,23 @@ public class Dentist extends User {
 	private Boolean fridayAfternoon;
 
 	@ManyToMany
-	@JoinTable(name = "dentist_treatment", joinColumns = @JoinColumn(name = "dentist_id"), inverseJoinColumns = @JoinColumn(name = "treatment_id"))
-	@JsonIgnore
-	private Set<Treatment> treatments;
+    @JoinTable(name = "dentist_treatment", 
+               joinColumns = @JoinColumn(name = "dentist_id"), 
+               inverseJoinColumns = @JoinColumn(name = "treatment_id"))
+    @JsonIgnore
+    private Set<Treatment> treatments;
+	
+	
+	public Dentist() {}
 
-	public Dentist() {
-
-	}
-
+	
+	public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    
+    public User getUser() { return user; }
+    public void setUser(User user) { this.user = user; }
+    
+    
 	public Boolean getMondayMorning() {
 		return mondayMorning;
 	}

@@ -12,7 +12,9 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class JwtAuthFilter extends OncePerRequestFilter {
 
@@ -38,11 +40,27 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         if (jwtService.isValid(token)) {
             String email = jwtService.extractEmail(token);
-            String role  = jwtService.extractRole(token);
+            // 1. Extraemos la lista de roles en lugar de un solo String
+            List<String> roles = jwtService.extractRoles(token);
+
+            // 2. Protegemos contra nulos en tokens antiguos
+            if (roles == null) {
+                roles = new ArrayList<>();
+            }
+
+            // 3. Convertimos cada String de rol en un GrantedAuthority con el prefijo "ROLE_"
+            List<SimpleGrantedAuthority> authorities = roles.stream()
+                    .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
+                    .collect(Collectors.toList());
+
+            // 4. Fallback de seguridad (opcional)
+            if (authorities.isEmpty()) {
+                authorities.add(new SimpleGrantedAuthority("ROLE_PATIENT"));
+            }
 
             UserDetails userDetails = User.withUsername(email)
                     .password("")
-                    .authorities(List.of(new SimpleGrantedAuthority("ROLE_" + (role != null ? role : "USER"))))
+                    .authorities(authorities) // Pasamos la colección completa
                     .build();
 
             UsernamePasswordAuthenticationToken auth =

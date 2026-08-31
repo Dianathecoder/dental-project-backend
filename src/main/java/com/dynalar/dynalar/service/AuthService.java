@@ -21,6 +21,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -60,7 +62,12 @@ public class AuthService {
         user.setSurname(req.getSurname());
         user.setEmail(req.getEmail());
         user.setPassword(passwordEncoder.encode(req.getPassword()));
-        user.setRole(Role.USER);
+        
+        // Asignación con Set de Roles
+        Set<Role> roles = new HashSet<>();
+        roles.add(Role.PATIENT);
+        user.setRoles(roles);
+        
         userRepo.save(user);
 
         return new AuthResponse(
@@ -69,7 +76,7 @@ public class AuthService {
                 user.getName(),
                 user.getSurname(),
                 user.getEmail(),
-                user.getRole()
+                user.getRoles() // Cambiado a getRoles()
         );
     }
 
@@ -88,7 +95,7 @@ public class AuthService {
                 user.getName(),
                 user.getSurname(),
                 user.getEmail(),
-                user.getRole()
+                user.getRoles() // Cambiado a getRoles()
         );
     }
 
@@ -125,7 +132,12 @@ public class AuthService {
                             newUser.setGoogleId(googleId);
                             newUser.setProvider(User.Provider.GOOGLE);
                             newUser.setEmailVerified(true);
-                            newUser.setRole(Role.USER);             
+                            
+                            // Asignación con Set de Roles
+                            Set<Role> roles = new HashSet<>();
+                            roles.add(Role.PATIENT);
+                            newUser.setRoles(roles);           
+                            
                             return userRepo.save(newUser);
                         }));
 
@@ -135,7 +147,7 @@ public class AuthService {
                 user.getName(),
                 user.getSurname(),
                 user.getEmail(),
-                user.getRole()
+                user.getRoles() // Cambiado a getRoles()
         );
     }
 

@@ -32,11 +32,16 @@ import com.dynalar.dynalar.respository.BoxRepository;
 import com.dynalar.dynalar.respository.DentistRepository;
 import com.dynalar.dynalar.respository.PatientRepository;
 import com.dynalar.dynalar.respository.TreatmentRepository;
+import com.dynalar.dynalar.service.WhatsAppService;
 
 @RestController
 @RequestMapping("/appointment")
 public class AppointmentController {
 
+	
+	@Autowired
+    private WhatsAppService whatsappService;
+	
 	@Autowired
 	private AppointmentRepository appointmentRepository;
 
@@ -51,6 +56,8 @@ public class AppointmentController {
 
 	@Autowired
 	private BoxRepository boxRepository;
+	
+	
 
 	@PostMapping("/auto-assign")
 	public ResponseEntity<?> autoAssignAppointment(@RequestBody AutoAssignRequest request) {

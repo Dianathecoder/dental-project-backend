@@ -9,7 +9,8 @@ import org.springframework.stereotype.Service;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
-
+import java.util.List;
+import java.util.stream.Collectors;
 
 //Genera y valida los tokens JWT.
 @Service
@@ -22,11 +23,16 @@ public class JwtService {
     private long expiration;
 
     public String generateToken(User user) {
+        // Convertir la colección de roles (Set<Role>) a una lista de Strings
+        List<String> rolesList = user.getRoles().stream()
+                .map(Enum::name)
+                .collect(Collectors.toList());
+
         return Jwts.builder()
                 .subject(user.getEmail())
                 .claim("userId", user.getId())
                 .claim("name", user.getName())
-                .claim("role", user.getRole().name()) // guarda "USER", "ADMIN", "DENTIST"
+                .claim("roles", rolesList) // Ahora guardamos una lista: ["PATIENT"], ["ADMIN", "DOCTOR"], etc.
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(getKey())
@@ -36,8 +42,10 @@ public class JwtService {
     public String extractEmail(String token) {
         return getClaims(token).getSubject();
     }
-    public String extractRole(String token) {
-        return getClaims(token).get("role", String.class);
+    
+    // Modificado para que devuelva una lista de roles en lugar de un solo String
+    public List<String> extractRoles(String token) {
+        return getClaims(token).get("roles", List.class);
     }
 
     public boolean isValid(String token) {
