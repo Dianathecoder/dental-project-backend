@@ -7,6 +7,7 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -39,7 +40,12 @@ import com.dynalar.dynalar.service.WhatsAppService;
 public class AppointmentController {
 
 	
+
 	@Autowired
+    private BoxRepository boxRepository;
+
+    // --- AÑADIR ESTO ---
+    @Autowired
     private WhatsAppService whatsappService;
 	
 	@Autowired
@@ -54,12 +60,10 @@ public class AppointmentController {
 	@Autowired
 	private DentistRepository dentistRepository;
 
-	@Autowired
-	private BoxRepository boxRepository;
-	
 	
 
 	@PostMapping("/auto-assign")
+	@PreAuthorize("@userSecurity.isSelfOrStaffOrDoctor(authentication, #request.patientId)") // <-- 1. SEGURIDAD AÑADIDA AQUÍ
 	public ResponseEntity<?> autoAssignAppointment(@RequestBody AutoAssignRequest request) {
 		try {
 			com.dynalar.dynalar.model.patient.Patient patient = patientRepository.findById(request.getPatientId()).orElse(null);
@@ -170,6 +174,11 @@ public class AppointmentController {
 
 			Appointment savedAppointment = appointmentRepository.save(newAppointment);
 			
+			//Notificacion Wharsapp
+			if (patient != null) {
+			    whatsappService.sendAppointmentNotification(patient, savedAppointment);
+			}
+		
 			return ResponseEntity.status(HttpStatus.CREATED).body(savedAppointment);
 
 		} catch (Exception e) {
@@ -177,7 +186,6 @@ public class AppointmentController {
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error interno procesando la cita.");
 		}
 	}
-
 
 	@GetMapping("/index")
 	public @ResponseBody ResponseEntity<Page<Appointment>> getAllAppointments(
@@ -224,15 +232,23 @@ public class AppointmentController {
 	}
 	
 	@PostMapping()
-	public ResponseEntity<Appointment> createAppointment(@RequestBody Appointment appointment) {
-		try {
-			Appointment newAppointment = appointmentRepository.save(appointment);
-			return ResponseEntity.status(HttpStatus.CREATED).body(newAppointment);
-		} catch (Exception e) {
-			e.printStackTrace();
-			return ResponseEntity.badRequest().build();
-		}
-	}
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_AUXILIAR')")
+    public ResponseEntity<Appointment> createAppointment(@RequestBody Appointment appointment) {
+        try {
+            Appointment newAppointment = appointmentRepository.save(appointment);
+            
+            // --- AÑADIR ESTE BLOQUE ---
+            if (newAppointment.getPatient() != null) {
+                whatsappService.sendAppointmentNotification(newAppointment.getPatient(), newAppointment);
+            }
+            // --------------------------
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(newAppointment);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().build();
+        }
+    }
 
 	@GetMapping("/{id}")
 	public ResponseEntity<Appointment> getAppointmentById(@PathVariable Long id) {
