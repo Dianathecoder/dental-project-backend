@@ -44,7 +44,7 @@ public class AppointmentController {
 	@Autowired
     private BoxRepository boxRepository;
 
-    // --- AÑADIR ESTO ---
+
     @Autowired
     private WhatsAppService whatsappService;
 	
@@ -63,7 +63,7 @@ public class AppointmentController {
 	
 
 	@PostMapping("/auto-assign")
-	@PreAuthorize("@userSecurity.isSelfOrStaffOrDoctor(authentication, #request.patientId)") // <-- 1. SEGURIDAD AÑADIDA AQUÍ
+	@PreAuthorize("@userSecurity.isSelfOrStaffOrDoctor(authentication, #request.patientId)") 
 	public ResponseEntity<?> autoAssignAppointment(@RequestBody AutoAssignRequest request) {
 		try {
 			com.dynalar.dynalar.model.patient.Patient patient = patientRepository.findById(request.getPatientId()).orElse(null);
