@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -11,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import com.dynalar.dynalar.model.odontogram.Odontogram;
 import com.dynalar.dynalar.model.patient.Patient;
@@ -18,6 +20,7 @@ import com.dynalar.dynalar.model.user.Role;
 import com.dynalar.dynalar.model.user.User;
 import com.dynalar.dynalar.respository.PatientRepository;
 import com.dynalar.dynalar.respository.UserRepository;
+import com.dynalar.dynalar.service.EmailService;
 
 @RestController
 @RequestMapping("/patient")
@@ -28,6 +31,13 @@ public class PatientController {
     
     @Autowired
     private UserRepository userRepository;
+    
+    @Autowired
+    private EmailService emailService;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+    
     
     // Solo Admin, Auxiliar o Doctor pueden ver la lista general
     @GetMapping("/index")
@@ -52,22 +62,38 @@ public class PatientController {
     // Solo el staff administrativo crea pacientes manualmente
     @PostMapping
     @PreAuthorize("@userSecurity.isStaff(authentication)")
-    public ResponseEntity<Patient> createPatient(@RequestBody Patient patient) {
+    public ResponseEntity<?> createPatient(
+            @RequestBody Patient patient,
+            @RequestParam(defaultValue = "false") boolean createAppAccount) {
         try {
-            if (patient.getUser() != null && patient.getUser().getId() != null) {
-                User existingUser = userRepository.findById(patient.getUser().getId())
-                                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+            // Si se solicita crear cuenta de App y el paciente tiene email
+            if (createAppAccount && patient.getEmail() != null && !patient.getEmail().trim().isEmpty()) {
                 
-                existingUser.getRoles().add(Role.PATIENT);
-                userRepository.save(existingUser);
-                
-                patient.setUser(existingUser);
+                if (userRepository.existsByEmail(patient.getEmail())) {
+                    return ResponseEntity.badRequest().body("Ya existe una cuenta de usuario con este correo.");
+                }
+
+                String tempPassword = UUID.randomUUID().toString().substring(0, 8);
+
+                User newUser = new User();
+                newUser.setName(patient.getName());
+                newUser.setSurname(patient.getLastName());
+                newUser.setEmail(patient.getEmail());
+                newUser.setPassword(passwordEncoder.encode(tempPassword));
+                newUser.getRoles().add(Role.PATIENT);
+
+                User savedUser = userRepository.save(newUser);
+                patient.setUser(savedUser);
+
+                // Enviar correo de invitación a la App
+                emailService.sendPatientAppInvitation(patient.getEmail(), tempPassword);
             }
 
+            // Vincular registros médicos
             if (patient.getMedicalRecord() != null) {
                 patient.getMedicalRecord().setPatient(patient);
             }
-            
+
             if (patient.getOdontogram() == null) {
                 Odontogram o = new Odontogram();
                 o.setPatient(patient);
@@ -75,16 +101,17 @@ public class PatientController {
             } else {
                 patient.getOdontogram().setPatient(patient);
             }
-            
+
+            //Guardar Ficha del Paciente
             Patient savedPatient = patientRepository.save(patient);
             return ResponseEntity.status(HttpStatus.CREATED).body(savedPatient);
+
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-
-    // Admin, Auxiliar, Doctor o el Paciente dueño pueden ver su propio perfil
+    // Todos los usuarios pueden ver su propio perfil
     @GetMapping("/{id}")
     @PreAuthorize("@userSecurity.isSelfOrStaffOrDoctor(authentication, #id)")
     public ResponseEntity<Patient> getPatientById(@PathVariable Long id) {
@@ -99,7 +126,7 @@ public class PatientController {
         }
     }
     
-    // Solo Admin, Auxiliar o Doctor pueden buscar
+    // Todos los usuarios menos el Pacientes pueden buscar en la lista de pacientes
     @GetMapping("/search")
     @PreAuthorize("@userSecurity.isStaffOrDoctor(authentication)")
     public ResponseEntity<Page<Patient>> searchPatients(
@@ -116,7 +143,7 @@ public class PatientController {
         }
     }
     
-    // El dueño, el admin, auxiliar o doctor pueden actualizar
+  
     @PutMapping("/update")
     @PreAuthorize("@userSecurity.isSelfOrStaffOrDoctor(authentication, #updatedPatient.id)")
     public ResponseEntity<Patient> updatePatient(@RequestBody Patient updatedPatient) {
@@ -167,7 +194,7 @@ public class PatientController {
         }
     }
 
-    // Solo el staff (Admin/Auxiliar) puede eliminar pacientes
+    // Solo el Admin y Auxiliar puede eliminar pacientes
     @DeleteMapping("/{id}")
     @PreAuthorize("@userSecurity.isStaff(authentication)")
     public ResponseEntity<Void> deletePatient(@PathVariable Long id) {

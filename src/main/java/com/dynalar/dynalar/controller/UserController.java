@@ -1,18 +1,18 @@
 package com.dynalar.dynalar.controller;
 
+import com.dynalar.dynalar.model.user.Role;
+import com.dynalar.dynalar.model.user.User;
+import com.dynalar.dynalar.respository.UserRepository;
+import com.dynalar.dynalar.service.EmailService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.*;
 
-import com.dynalar.dynalar.model.user.User; 
-import com.dynalar.dynalar.respository.UserRepository;
-
-import java.util.List;
-import java.util.Optional;
+import java.util.UUID;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/user")
@@ -20,26 +20,45 @@ public class UserController {
 
     @Autowired
     private UserRepository userRepository;
-    
-    // Solo el staff (ADMIN o AUXILIAR) puede ver la lista de todos los usuarios del sistema
-    @GetMapping("/all")
-    @PreAuthorize("@userSecurity.isStaff(authentication)")
-    public ResponseEntity<List<User>> getAllUsers() {
-        return ResponseEntity.ok(userRepository.findAll());
-    }
-    
-    // Un usuario puede ver su propia cuenta, o el staff puede ver la de cualquiera
-    @GetMapping("/{id}")
-    @PreAuthorize("@userSecurity.isSelfOrStaff(authentication, #id)")
-    public ResponseEntity<User> getUserById(@PathVariable Long id) {
-        Optional<User> user = userRepository.findById(id);
-        
-        if (user.isPresent()) {
-            User foundUser = user.get();
-            foundUser.setPassword(null); 
-            return ResponseEntity.ok(foundUser);
+
+    @Autowired
+    private EmailService emailService;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    // Solo el ADMIN puede crear usuarios del sistema con roles específicos
+    @PostMapping("/create-staff")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    public ResponseEntity<?> createStaffUser(@RequestBody User userRequest, @RequestParam Set<Role> roles) {
+        try {
+            if (userRepository.existsByEmail(userRequest.getEmail())) {
+                return ResponseEntity.badRequest().body("El correo ya está registrado.");
+            }
+
+            // 1. Generar contraseña temporal limpia
+            String tempPassword = UUID.randomUUID().toString().substring(0, 8);
+
+            // 2. Configurar usuario
+            User newUser = new User();
+            newUser.setName(userRequest.getName());
+            newUser.setSurname(userRequest.getSurname());
+            newUser.setEmail(userRequest.getEmail());
+            newUser.setPassword(passwordEncoder.encode(tempPassword)); // Encriptar para la BD
+            newUser.setRoles(roles);
+
+            User savedUser = userRepository.save(newUser);
+
+            // 3. Enviar correo con la contraseña en texto plano
+            emailService.sendInitialPassword(savedUser.getEmail(), tempPassword);
+
+            // Ocultar la contraseña en la respuesta HTTP
+            savedUser.setPassword(null);
+            return ResponseEntity.status(HttpStatus.CREATED).body(savedUser);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al crear el usuario.");
         }
-        
-        return ResponseEntity.notFound().build();
     }
 }
