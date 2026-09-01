@@ -18,9 +18,16 @@ public class AuthController {
         this.authService = authService;
     }
 
-    @PostMapping("/register")
-    public ResponseEntity<AuthResponse> register(@RequestBody @Valid RegisterRequest req) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(authService.register(req));
+    // Para que las clínicas orgánicas se den de alta
+    @PostMapping("/register/clinic")
+    public ResponseEntity<AuthResponse> registerClinic(@RequestBody @Valid RegisterRequest req) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(authService.registerClinicAdmin(req));
+    }
+
+    // Para pacientes
+    @PostMapping("/register/patient")
+    public ResponseEntity<AuthResponse> registerPatient(@RequestBody @Valid RegisterRequest req) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(authService.registerPatientApp(req));
     }
 
     @PostMapping("/login")
@@ -28,9 +35,12 @@ public class AuthController {
         return ResponseEntity.ok(authService.login(req));
     }
 
+    // Para distinguir admin o patient cuando es una cuenta nueva
     @PostMapping("/google")
-    public ResponseEntity<AuthResponse> googleLogin(@RequestBody GoogleAuthRequest req) throws Exception {
-        return ResponseEntity.ok(authService.googleLogin(req.getIdToken()));
+    public ResponseEntity<AuthResponse> googleLogin(
+            @RequestBody GoogleAuthRequest req,
+            @RequestParam(defaultValue = "patient") String type) throws Exception {
+        return ResponseEntity.ok(authService.googleLogin(req.getIdToken(), type));
     }
 
     @PostMapping("/forgot-password")

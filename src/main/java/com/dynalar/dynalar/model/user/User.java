@@ -47,7 +47,14 @@ public class User {
     
     private String avatarUrl;
 
-    
+    @Column(name = "failed_attempt")
+    private int failedAttempt = 0;
+
+    @Column(name = "account_non_locked")
+    private boolean accountNonLocked = true;
+
+    @Column(name = "lock_time")
+    private java.time.LocalDateTime lockTime;
     
     @ElementCollection(targetClass = Role.class, fetch = FetchType.EAGER)
     @CollectionTable(name = "usuario_rol", joinColumns = @JoinColumn(name = "usuario_id"))
@@ -148,6 +155,15 @@ public class User {
 	    public void setRoles(Set<Role> roles) {
 	        this.roles = roles;
 	    }
+	    public int getFailedAttempt() { return failedAttempt; }
+	    public void setFailedAttempt(int failedAttempt) { this.failedAttempt = failedAttempt; }
+
+	    public boolean isAccountNonLocked() { return accountNonLocked; }
+	    public void setAccountNonLocked(boolean accountNonLocked) { this.accountNonLocked = accountNonLocked; }
+
+	    public java.time.LocalDateTime getLockTime() { return lockTime; }
+	    public void setLockTime(java.time.LocalDateTime lockTime) { this.lockTime = lockTime; }
+	    
 
 	
 }

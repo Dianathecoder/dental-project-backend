@@ -8,10 +8,13 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.dynalar.dynalar.model.patient.Patient;
+import java.util.Optional;
 
 @Repository
 public interface PatientRepository extends JpaRepository<Patient, Long> {
 
+	Optional<Patient> findByEmail(String email);
+	
 	@Query("SELECT p FROM Patient p WHERE " +
 			"LOWER(CONCAT(COALESCE(p.name, ''), ' ', COALESCE(p.lastName, ''))) LIKE LOWER(CONCAT('%', :query, '%')) " +
 			"OR LOWER(COALESCE(p.dni, '')) LIKE LOWER(CONCAT('%', :query, '%'))")
