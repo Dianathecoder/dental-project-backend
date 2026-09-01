@@ -18,37 +18,40 @@ public class AuthController {
         this.authService = authService;
     }
 
-    // Para que las clínicas orgánicas se den de alta
-    @PostMapping("/register/clinic")
+    //Registro aadmin
+    @PostMapping("/register")
     public ResponseEntity<AuthResponse> registerClinic(@RequestBody @Valid RegisterRequest req) {
         return ResponseEntity.status(HttpStatus.CREATED).body(authService.registerClinicAdmin(req));
     }
 
-    // Para pacientes
-    @PostMapping("/register/patient")
-    public ResponseEntity<AuthResponse> registerPatient(@RequestBody @Valid RegisterRequest req) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(authService.registerPatientApp(req));
-    }
-
+    //Para Admins, Doctores, Auxiliares y Pacientes ya activados
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@RequestBody @Valid LoginRequest req) {
         return ResponseEntity.ok(authService.login(req));
     }
 
-    // Para distinguir admin o patient cuando es una cuenta nueva
+    //El backend decide automáticamente el rol (Admin nuevo, o Paciente invitado)
     @PostMapping("/google")
-    public ResponseEntity<AuthResponse> googleLogin(
-            @RequestBody GoogleAuthRequest req,
-            @RequestParam(defaultValue = "patient") String type) throws Exception {
-        return ResponseEntity.ok(authService.googleLogin(req.getIdToken(), type));
+    public ResponseEntity<AuthResponse> googleLogin(@RequestBody GoogleAuthRequest req) throws Exception {
+    	return ResponseEntity.ok(authService.googleLogin(req.getIdToken()));
     }
 
+    //Cuando pulsan el enlace del correo de invitación
+    @PostMapping("/activate-patient")
+    public ResponseEntity<MessageResponse> activatePatient(@RequestBody @Valid ResetPasswordRequest req) {
+        authService.resetPassword(req.getToken(), req.getNewPassword());
+        return ResponseEntity.ok(new MessageResponse("Cuenta de paciente activada y contraseña guardada."));
+    }
+
+    //Para recuperar la contraseña
+    
     @PostMapping("/forgot-password")
     public ResponseEntity<MessageResponse> forgotPassword(@RequestBody @Valid ForgotPasswordRequest req) {
         authService.forgotPassword(req.getEmail());
         return ResponseEntity.ok(new MessageResponse("Correo enviado correctamente"));
     }
 
+    //Cambio de contraseña
     @PostMapping("/reset-password")
     public ResponseEntity<MessageResponse> resetPassword(@RequestBody @Valid ResetPasswordRequest req) {
         authService.resetPassword(req.getToken(), req.getNewPassword());

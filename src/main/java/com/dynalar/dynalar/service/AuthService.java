@@ -71,51 +71,15 @@ public class AuthService {
         user.setPassword(passwordEncoder.encode(req.getPassword()));
         
         Set<Role> roles = new HashSet<>();
-        roles.add(Role.ADMIN);
+        roles.add(Role.ADMIN); // TODO EL QUE SE REGISTRE POR FORMULARIO ES ADMIN
         user.setRoles(roles);
         
         userRepo.save(user);
 
-        return new AuthResponse(
-                jwtService.generateToken(user),
-                user.getId(),
-                user.getName(),
-                user.getSurname(),
-                user.getEmail(),
-                user.getRoles()
-        );
+        return new AuthResponse(jwtService.generateToken(user), user.getId(), user.getName(),
+                user.getSurname(), user.getEmail(), user.getRoles());
     }
-
-    // registro para pde la app siendo pacientes
-    public AuthResponse registerPatientApp(RegisterRequest req) {
-        if (userRepo.existsByEmail(req.getEmail()))
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email ya registrado");
-
-        User user = new User();
-        user.setName(req.getName());
-        user.setSurname(req.getSurname());
-        user.setEmail(req.getEmail());
-        user.setPassword(passwordEncoder.encode(req.getPassword()));
-        
-        Set<Role> roles = new HashSet<>();
-        roles.add(Role.PATIENT);
-        user.setRoles(roles);
-        
-        User savedUser = userRepo.save(user);
-
-        // Unir usuario con su ficha médica o crear una nueva
-        linkOrCreatePatientRecord(savedUser, req.getName(), req.getSurname(), req.getEmail());
-
-        return new AuthResponse(
-                jwtService.generateToken(savedUser),
-                savedUser.getId(),
-                savedUser.getName(),
-                savedUser.getSurname(),
-                savedUser.getEmail(),
-                savedUser.getRoles()
-        );
-    }
-
+ 
     // Login con bloqueo
     public AuthResponse login(LoginRequest req) {
         User user = userRepo.findByEmail(req.getEmail())
@@ -170,21 +134,19 @@ public class AuthService {
     }
 
   
-    public AuthResponse googleLogin(String idToken, String type) throws Exception {
+    public AuthResponse googleLogin(String idToken) throws Exception {
         GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(
                 new NetHttpTransport(), GsonFactory.getDefaultInstance())
                 .setAudience(Collections.singletonList(googleClientId))
                 .build();
 
         GoogleIdToken googleIdToken = verifier.verify(idToken);
-        if (googleIdToken == null)
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token de Google inválido");
+        if (googleIdToken == null) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token inválido");
 
-        GoogleIdToken.Payload payload = googleIdToken.getPayload();
-        String googleId = payload.getSubject();
-        String email = payload.getEmail();
-        String givenName = (String) payload.get("given_name");
-        String familyName = (String) payload.get("family_name");
+        String googleId = googleIdToken.getPayload().getSubject();
+        String email = googleIdToken.getPayload().getEmail();
+        String givenName = (String) googleIdToken.getPayload().get("given_name");
+        String familyName = (String) googleIdToken.getPayload().get("family_name");
 
         User user = userRepo.findByGoogleId(googleId)
                 .orElseGet(() -> userRepo.findByEmail(email)
@@ -194,41 +156,42 @@ public class AuthService {
                             return userRepo.save(u);
                         })
                         .orElseGet(() -> {
+                      //El usuario nuevo
                             User newUser = new User();
                             newUser.setEmail(email);
                             newUser.setName(givenName != null ? givenName : email);
                             newUser.setSurname(familyName != null ? familyName : "");
-                            newUser.setAvatarUrl((String) payload.get("picture"));
                             newUser.setGoogleId(googleId);
                             newUser.setProvider(User.Provider.GOOGLE);
                             newUser.setEmailVerified(true);
                             
                             Set<Role> roles = new HashSet<>();
-                            if ("admin".equalsIgnoreCase(type)) {
-                                roles.add(Role.ADMIN);
-                            } else {
-                                roles.add(Role.PATIENT);
-                            }
-                            newUser.setRoles(roles);           
+
+                        
+                            Optional<Patient> invitedPatient = patientRepo.findByEmail(email);
                             
-                            User savedUser = userRepo.save(newUser);
-
-                            // Si se registra como paciente, vinculamos/creamos su ficha médica
-                            if ("patient".equalsIgnoreCase(type)) {
-                                linkOrCreatePatientRecord(savedUser, newUser.getName(), newUser.getSurname(), email);
+                            if (invitedPatient.isPresent()) {
+                                // Sí, estaba en la base de datos de pacientes.
+                                roles.add(Role.PATIENT);
+                                newUser.setRoles(roles);
+                                User savedPatientUser = userRepo.save(newUser);
+                                
+                                // Lo vinculamos a su historial médico
+                                Patient p = invitedPatient.get();
+                                p.setUser(savedPatientUser);
+                                patientRepo.save(p);
+                                
+                                return savedPatientUser;
+                            } else {
+                                // No, es alguien orgánico de Play Store.
+                                roles.add(Role.ADMIN);
+                                newUser.setRoles(roles);
+                                return userRepo.save(newUser);
                             }
-
-                            return savedUser;
                         }));
 
-        return new AuthResponse(
-                jwtService.generateToken(user),
-                user.getId(),
-                user.getName(),
-                user.getSurname(),
-                user.getEmail(),
-                user.getRoles()
-        );
+        return new AuthResponse(jwtService.generateToken(user), user.getId(), user.getName(),
+                user.getSurname(), user.getEmail(), user.getRoles());
     }
 
     // Olvide mi password
