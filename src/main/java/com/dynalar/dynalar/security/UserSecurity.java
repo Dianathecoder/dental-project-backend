@@ -38,13 +38,17 @@ public class UserSecurity {
 
     public boolean isStaff(Authentication authentication) {
         return authentication.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_AUXILIAR"));
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ADMIN") 
+                            || a.getAuthority().equals("ROLE_AUXILIAR") || a.getAuthority().equals("AUXILIAR"));
     }
-
+    
     public boolean isStaffOrDoctor(Authentication authentication) {
+        System.out.println("INTENTO DE ACCESO. Usuario: " + authentication.getName());
+        System.out.println("Roles en el token: " + authentication.getAuthorities());
+
         return authentication.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN")
-                        || a.getAuthority().equals("ROLE_AUXILIAR")
-                        || a.getAuthority().equals("ROLE_DOCTOR"));
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ADMIN")
+                        || a.getAuthority().equals("ROLE_AUXILIAR") || a.getAuthority().equals("AUXILIAR")
+                        || a.getAuthority().equals("ROLE_DOCTOR") || a.getAuthority().equals("DOCTOR"));
     }
 }

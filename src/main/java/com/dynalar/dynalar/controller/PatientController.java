@@ -42,7 +42,7 @@ public class PatientController {
     // Solo Admin, Auxiliar o Doctor pueden ver la lista general
     @GetMapping("/index")
     @PreAuthorize("@userSecurity.isStaffOrDoctor(authentication)")
-    public ResponseEntity<Page<Patient>> getAllPatients(
+    public ResponseEntity<?> getAllPatients(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size,
             @RequestParam(required = false) String initial) {
@@ -55,7 +55,8 @@ public class PatientController {
             
             return ResponseEntity.ok(patientRepository.findAll(pageable));
         } catch (Exception e) {
-            return ResponseEntity.status(404).build();
+            // AQUI CAPTURAMOS EL ERROR Y LO ENVIAMOS AL FRONTEND
+            return ResponseEntity.status(500).body("ERROR REAL DEL SERVIDOR: " + e.getMessage() + " | CAUSA: " + (e.getCause() != null ? e.getCause().getMessage() : "Desconocida"));
         }
     }
     
@@ -111,6 +112,7 @@ public class PatientController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+    
     // Todos los usuarios pueden ver su propio perfil
     @GetMapping("/{id}")
     @PreAuthorize("@userSecurity.isSelfOrStaffOrDoctor(authentication, #id)")
