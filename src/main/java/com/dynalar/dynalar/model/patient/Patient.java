@@ -23,7 +23,6 @@ import com.dynalar.dynalar.model.Appointment;
 @Table(name = "patient")
 public class Patient {
 
-	
     private String name;
     private String lastName;
     private String email;
@@ -37,22 +36,25 @@ public class Patient {
     @Enumerated(EnumType.STRING)
     private Sex sex;
     
-    
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-	@OneToOne
+    @OneToOne
     @JoinColumn(name = "usuario_id", referencedColumnName = "id", unique = true)
     private User user;
-	
+    
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "medical_record_id", referencedColumnName = "id")
+    @JsonIgnore // Evita bucles con el historial médico
     private MedicalRecord medicalRecord;
 
     @OneToOne(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore // Evita bucles infinitos de serialización con el odontograma
     private Odontogram odontogram;
+    
     @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore // Evita bucles infinitos de serialización con los documentos
     private List<Document> documents;
     
     @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -60,26 +62,23 @@ public class Patient {
     private List<Appointment> appointments;
     
     public Patient() {
-    	this.odontogram = new Odontogram();
-		this.odontogram.setPatient(this);
-	}
-
+        this.odontogram = new Odontogram();
+        this.odontogram.setPatient(this);
+    }
     
-    public Patient(MedicalRecord medicalRecord, String name, String lastName, String email, String dni)
-    {
-    	this.medicalRecord = medicalRecord;
-		this.name = name;
-		this.lastName = lastName;
-		this.email = email;
-		this.dni = dni;
-		this.odontogram = new Odontogram();
-		this.odontogram.setPatient(this);
+    public Patient(MedicalRecord medicalRecord, String name, String lastName, String email, String dni) {
+        this.medicalRecord = medicalRecord;
+        this.name = name;
+        this.lastName = lastName;
+        this.email = email;
+        this.dni = dni;
+        this.odontogram = new Odontogram();
+        this.odontogram.setPatient(this);
     }
     
     public User getUser() { return user; }
     public void setUser(User user) { this.user = user; }
     
-
     public Sex getSex() {
         return sex;
     }
@@ -88,130 +87,107 @@ public class Patient {
         this.sex = sex;
     }
     
-	public Long getId() {
-		return id;
-	}
+    public Long getId() {
+        return id;
+    }
 
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-	public void setId(Long id) {
-		this.id = id;
-	}
+    public String getName() {
+        return name;
+    }
 
+    public void setName(String name) {
+        this.name = name;
+    }
 
-	public String getName() {
-		return name;
-	}
+    public String getLastName() {
+        return lastName;
+    }
 
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
 
-	public void setName(String name) {
-		this.name = name;
-	}
+    public String getEmail() {
+        return email;
+    }
 
+    public void setEmail(String email) {
+        this.email = email;
+    }
 
-	public String getLastName() {
-		return lastName;
-	}
+    public String getDni() {
+        return dni;
+    }
 
+    public void setDni(String dni) {
+        this.dni = dni;
+    }
 
-	public void setLastName(String lastName) {
-		this.lastName = lastName;
-	}
+    public String getSocialSecurityNumber() {
+        return socialSecurityNumber;
+    }
 
+    public void setSocialSecurityNumber(String socialSecurityNumber) {
+        this.socialSecurityNumber = socialSecurityNumber;
+    }
 
-	public String getEmail() {
-		return email;
-	}
+    public String getPhone() {
+        return phone;
+    }
 
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
 
-	public void setEmail(String email) {
-		this.email = email;
-	}
+    public Boolean getTreatmentConsent() {
+        return treatmentConsent;
+    }
 
+    public void setTreatmentConsent(Boolean treatmentConsent) {
+        this.treatmentConsent = treatmentConsent;
+    }
 
-	public String getDni() {
-		return dni;
-	}
+    public Boolean getAnesthesiaConsent() {
+        return anesthesiaConsent;
+    }
 
+    public void setAnesthesiaConsent(Boolean anesthesiaConsent) {
+        this.anesthesiaConsent = anesthesiaConsent;
+    }
 
-	public void setDni(String dni) {
-		this.dni = dni;
-	}
+    public String getBilling() {
+        return billing;
+    }
 
+    public void setBilling(String billing) {
+        this.billing = billing;
+    }
 
-	public String getSocialSecurityNumber() {
-		return socialSecurityNumber;
-	}
+    public MedicalRecord getMedicalRecord() {
+        return medicalRecord;
+    }
 
+    public void setMedicalRecord(MedicalRecord medicalRecord) {
+        this.medicalRecord = medicalRecord;
+    }
 
-	public void setSocialSecurityNumber(String socialSecurityNumber) {
-		this.socialSecurityNumber = socialSecurityNumber;
-	}
+    public List<Document> getDocuments() {
+        return documents;
+    }
 
+    public void setDocuments(List<Document> documents) {
+        this.documents = documents;
+    }
 
-	public String getPhone() {
-		return phone;
-	}
+    public Odontogram getOdontogram() {
+        return odontogram;
+    }
 
-
-	public void setPhone(String phone) {
-		this.phone = phone;
-	}
-
-
-	public Boolean getTreatmentConsent() {
-		return treatmentConsent;
-	}
-
-
-	public void setTreatmentConsent(Boolean treatmentConsent) {
-		this.treatmentConsent = treatmentConsent;
-	}
-
-
-	public Boolean getAnesthesiaConsent() {
-		return anesthesiaConsent;
-	}
-
-
-	public void setAnesthesiaConsent(Boolean anesthesiaConsent) {
-		this.anesthesiaConsent = anesthesiaConsent;
-	}
-
-
-	public String getBilling() {
-		return billing;
-	}
-
-
-	public void setBilling(String billing) {
-		this.billing = billing;
-	}
-
-
-	public MedicalRecord getMedicalRecord() {
-		return medicalRecord;
-	}
-
-
-	public void setMedicalRecord(MedicalRecord medicalRecord) {
-		this.medicalRecord = medicalRecord;
-	}
-
-
-	public List<Document> getDocuments() {
-		return documents;
-	}
-
-
-	public void setDocuments(List<Document> documents) {
-		this.documents = documents;
-	}
-
-	public Odontogram getOdontogram() {
-		return odontogram;
-	}
-
-	public void setOdontogram(Odontogram odontogram) {
-		this.odontogram = odontogram;
-	}    
+    public void setOdontogram(Odontogram odontogram) {
+        this.odontogram = odontogram;
+    }    
 }

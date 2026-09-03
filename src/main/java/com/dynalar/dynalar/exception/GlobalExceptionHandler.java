@@ -32,9 +32,18 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGeneral(Exception ex) {
+        ex.printStackTrace(); 
+        
         return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 "Error interno del servidor");
     }
+
+
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ResponseEntity<Map<String, Object>> handleAccessDenied(org.springframework.security.access.AccessDeniedException ex) {
+        return buildResponse(HttpStatus.FORBIDDEN.value(), "No tienes permisos para realizar esta acción.");
+    }
+    
 
     private ResponseEntity<Map<String, Object>> buildResponse(int status, String message) {
         Map<String, Object> body = new HashMap<>();

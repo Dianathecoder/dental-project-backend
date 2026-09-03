@@ -36,10 +36,10 @@ public class UserController {
                 return ResponseEntity.badRequest().body("El correo ya está registrado.");
             }
 
-            // 1. Generar contraseña temporal limpia
+            //Generar contraseña temporal limpia
             String tempPassword = UUID.randomUUID().toString().substring(0, 8);
 
-            // 2. Configurar usuario
+            //Configurar usuario
             User newUser = new User();
             newUser.setName(userRequest.getName());
             newUser.setSurname(userRequest.getSurname());
@@ -49,7 +49,7 @@ public class UserController {
 
             User savedUser = userRepository.save(newUser);
 
-            // 3. Enviar correo con la contraseña en texto plano
+            //Enviar correo con la contraseña en texto plano
             emailService.sendInitialPassword(savedUser.getEmail(), tempPassword);
 
             // Ocultar la contraseña en la respuesta HTTP
@@ -61,4 +61,18 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al crear el usuario.");
         }
     }
+    @GetMapping("/me")
+    public ResponseEntity<?> getMyProfile(org.springframework.security.core.Authentication authentication) {
+        // authentication.getName() saca el email directamente del Token JWT
+        String email = authentication.getName(); 
+        
+        java.util.Optional<User> user = userRepository.findByEmail(email);
+        
+        if (user.isPresent()) {
+            return ResponseEntity.ok(user.get());
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuario no encontrado");
+        }
+    }
+    
 }

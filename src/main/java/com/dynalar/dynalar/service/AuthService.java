@@ -34,7 +34,7 @@ public class AuthService {
 
     private final UserRepository userRepo;
     private final PasswordResetTokenRepository resetRepo;
-    private final PatientRepository patientRepo; // Añadido para vincular fichas
+    private final PatientRepository patientRepo;
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
     private final JavaMailSender mailSender;
@@ -59,7 +59,7 @@ public class AuthService {
         this.mailSender = mailSender;
     }
 
-    //regitro para la clinica siendo admin
+    // Registro para la clínica siendo admin
     public AuthResponse registerClinicAdmin(RegisterRequest req) {
         if (userRepo.existsByEmail(req.getEmail()))
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email ya registrado");
@@ -71,7 +71,7 @@ public class AuthService {
         user.setPassword(passwordEncoder.encode(req.getPassword()));
         
         Set<Role> roles = new HashSet<>();
-        roles.add(Role.ADMIN); // TODO EL QUE SE REGISTRE POR FORMULARIO ES ADMIN
+        roles.add(Role.ADMIN);
         user.setRoles(roles);
         
         userRepo.save(user);
@@ -79,17 +79,16 @@ public class AuthService {
         return new AuthResponse(jwtService.generateToken(user), user.getId(), user.getName(),
                 user.getSurname(), user.getEmail(), user.getRoles());
     }
- 
+
     // Login con bloqueo
     public AuthResponse login(LoginRequest req) {
         User user = userRepo.findByEmail(req.getEmail())
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.UNAUTHORIZED, "Credenciales incorrectas"));
 
-   
         if (!user.isAccountNonLocked()) {
             if (user.getLockTime() != null && user.getLockTime().plusMinutes(10).isBefore(LocalDateTime.now())) {
-            user.setAccountNonLocked(true);
+                user.setAccountNonLocked(true);
                 user.setFailedAttempt(0);
                 user.setLockTime(null);
                 userRepo.save(user);
@@ -117,7 +116,6 @@ public class AuthService {
                     "Credenciales incorrectas. Intento " + attempts + " de 5.");
         }
 
-     
         if (user.getFailedAttempt() > 0) {
             user.setFailedAttempt(0);
             userRepo.save(user);
@@ -133,68 +131,72 @@ public class AuthService {
         );
     }
 
-  
-    public AuthResponse googleLogin(String idToken) throws Exception {
-        GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(
-                new NetHttpTransport(), GsonFactory.getDefaultInstance())
-                .setAudience(Collections.singletonList(googleClientId))
-                .build();
+    public AuthResponse googleLogin(String idTokenString) {
+        try {
+            GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(
+                    new NetHttpTransport(), 
+                    new GsonFactory())
+                    .setAudience(Collections.singletonList(googleClientId))
+                    .build();
 
-        GoogleIdToken googleIdToken = verifier.verify(idToken);
-        if (googleIdToken == null) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token inválido");
+            GoogleIdToken idToken = verifier.verify(idTokenString);
 
-        String googleId = googleIdToken.getPayload().getSubject();
-        String email = googleIdToken.getPayload().getEmail();
-        String givenName = (String) googleIdToken.getPayload().get("given_name");
-        String familyName = (String) googleIdToken.getPayload().get("family_name");
+            if (idToken == null) {
+                System.err.println("ERROR: El verificador de Google devolvió NULL para el token: " + idTokenString);
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Token de Google no válido o audiencia no coincidente.");
+            }
 
-        User user = userRepo.findByGoogleId(googleId)
-                .orElseGet(() -> userRepo.findByEmail(email)
-                        .map(u -> {
-                            u.setGoogleId(googleId);
-                            u.setProvider(User.Provider.GOOGLE);
-                            return userRepo.save(u);
-                        })
-                        .orElseGet(() -> {
-                      //El usuario nuevo
-                            User newUser = new User();
-                            newUser.setEmail(email);
-                            newUser.setName(givenName != null ? givenName : email);
-                            newUser.setSurname(familyName != null ? familyName : "");
-                            newUser.setGoogleId(googleId);
-                            newUser.setProvider(User.Provider.GOOGLE);
-                            newUser.setEmailVerified(true);
-                            
-                            Set<Role> roles = new HashSet<>();
+            GoogleIdToken.Payload payload = idToken.getPayload();
+            String email = payload.getEmail();
+            String name = (String) payload.get("given_name");
+            String surname = (String) payload.get("family_name");
 
-                        
-                            Optional<Patient> invitedPatient = patientRepo.findByEmail(email);
-                            
-                            if (invitedPatient.isPresent()) {
-                                // Sí, estaba en la base de datos de pacientes.
-                                roles.add(Role.PATIENT);
-                                newUser.setRoles(roles);
-                                User savedPatientUser = userRepo.save(newUser);
-                                
-                                // Lo vinculamos a su historial médico
-                                Patient p = invitedPatient.get();
-                                p.setUser(savedPatientUser);
-                                patientRepo.save(p);
-                                
-                                return savedPatientUser;
-                            } else {
-                                // No, es alguien orgánico de Play Store.
-                                roles.add(Role.ADMIN);
-                                newUser.setRoles(roles);
-                                return userRepo.save(newUser);
-                            }
-                        }));
+            Optional<User> existingUser = userRepo.findByEmail(email);
+            User user;
 
-        return new AuthResponse(jwtService.generateToken(user), user.getId(), user.getName(),
-                user.getSurname(), user.getEmail(), user.getRoles());
+            if (existingUser.isPresent()) {
+                user = existingUser.get();
+                // FORZAR QUE CUALQUIER USUARIO QUE ENTRE CON GOOGLE TENGA ROL DE ADMIN
+                if (!user.getRoles().contains(Role.ADMIN)) {
+                    user.getRoles().add(Role.ADMIN);
+                    user = userRepo.save(user);
+                }
+            } else {
+                // USUARIO NUEVO
+                user = new User();
+                user.setEmail(email);
+                user.setName(name != null ? name : "Usuario");
+                user.setSurname(surname != null ? surname : "Google");
+                user.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
+                
+                // CAMBIADO: Asignar Role.ADMIN por defecto
+                Set<Role> roles = new HashSet<>();
+                roles.add(Role.ADMIN);
+                user.setRoles(roles);
+
+                user = userRepo.save(user);
+                linkOrCreatePatientRecord(user, user.getName(), user.getSurname(), email);
+            }
+
+            String jwt = jwtService.generateToken(user);
+            return new AuthResponse(
+                    jwt,
+                    user.getId(),
+                    user.getName(),
+                    user.getSurname(),
+                    user.getEmail(),
+                    user.getRoles()
+            );
+
+        } catch (ResponseStatusException e) {
+            throw e;
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error interno en Google Login: " + e.getMessage());
+        }
     }
 
-    // Olvide mi password
+    // Olvidé mi password
     public void forgotPassword(String email) {
         User user = userRepo.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(
@@ -217,7 +219,7 @@ public class AuthService {
         mailSender.send(message);
     }
 
-    //Reset del password
+    // Reset del password
     public void resetPassword(String token, String newPassword) {
         PasswordResetToken resetToken = resetRepo.findByTokenAndUsedFalse(token)
                 .orElseThrow(() -> new ResponseStatusException(
@@ -228,7 +230,6 @@ public class AuthService {
 
         User user = resetToken.getUser();
         user.setPassword(passwordEncoder.encode(newPassword));
-        
 
         user.setAccountNonLocked(true);
         user.setFailedAttempt(0);
@@ -240,8 +241,6 @@ public class AuthService {
         resetRepo.save(resetToken);
     }
 
-
-    
     private void linkOrCreatePatientRecord(User savedUser, String name, String surname, String email) {
         Optional<Patient> existingPatient = patientRepo.findByEmail(email);
         
