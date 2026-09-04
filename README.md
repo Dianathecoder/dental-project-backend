@@ -38,7 +38,7 @@ Actualmente, **mi desarrollo activo (🚧)** se centra en construir la lógica d
 *   **Autenticación Híbrida:** Implementación completa del flujo de registro e inicio de sesión integrando **Google Login (OAuth2)** junto con un sistema de acceso con credenciales tradicionales.
 *   **Gestión de credenciales seguras:** Lógica para la generación de contraseñas temporales por parte del Administrador para el primer inicio de sesión del personal médico.
 
-###  Funcionalidades Específicas por Rol (🚧 En desarrollo continuo)
+###  Funcionalidades Específicas por Rol (En desarrollo continuo)
 Estoy implementando una separación estricta de lógica e interfaces dependiendo del tipo de usuario:
 
 *   ** Administrador (Control Total):** Endpoints para la creación de usuarios, configuración de horarios/fichajes, gestión clínica (Odontogramas, materiales, boxes) y administración del calendario.
