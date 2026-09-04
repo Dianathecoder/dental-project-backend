@@ -23,7 +23,7 @@ El núcleo de este sistema destaca por su compleja arquitectura de permisos y la
 *   **Módulo de Agendas:** Gestión de citas, calendarios segmentados por doctor y asignación de espacios.
 *   ** Internacionalización (i18n):** Sistema multilenguaje integrado y preparado para servir el contenido en **Español, Catalán e Inglés**.
 
-## 📖 Contexto del Proyecto y Mis Aportes
+##  Contexto del Proyecto y Mis Aportes
 
 Este repositorio es una evolución de un proyecto académico grupal ([versión original](https://github.com/cassiuste/dynalar_backend)). 
 
