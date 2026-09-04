@@ -25,7 +25,7 @@ El núcleo de este sistema destaca por su compleja arquitectura de permisos y la
 
 ## Contexto del Proyecto y Mis Aportes
 
-Este repositorio es una evolución profunda de un proyecto académico grupal (https://github.com/cassiuste/dynalar_backend)). 
+Este repositorio es una evolución de un proyecto académico grupal (https://github.com/cassiuste/dynalar_backend)). 
 
 **Mi mayor contribución en esta versión individual ha sido la creación desde cero de toda la capa de seguridad y gestión de usuarios**, la cual no existía en el proyecto original. He rediseñado la arquitectura lógica para convertirla en un sistema integral con control de acceso basado en roles (RBAC).
 
