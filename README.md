@@ -41,7 +41,7 @@ Este repositorio es una evolución de un proyecto académico grupal (https://git
 *   **Seguridad:** Spring Security con **JWT (JSON Web Tokens)** para autenticación segura basada en tokens.
 *   **Persistencia de Datos:** Spring Data JPA / Hibernate
 *   **Base de Datos:** MySQL
-*   **Comunicación en tiempo real:** WebSockets / STOMP para el chat interno *(En desarrollo 🚧)*
+*   **Comunicación en tiempo real:** WebSockets / STOMP para el chat interno *(En desarrollo)*
   
 ###  Funcionalidades y Control de Roles (RBAC)
 He implementado una separación estricta de permisos e interfaces dependiendo del tipo de usuario:
