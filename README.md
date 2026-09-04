@@ -21,7 +21,7 @@ El núcleo de este sistema destaca por su compleja arquitectura de permisos y la
 *   **Módulo Clínico:** Gestión del estado del paciente, historiales médicos y almacenamiento estructurado de Odontogramas.
 *   **Módulo de Logística:** Control y asignación de Boxes (salas), protocolos médicos e inventario de materiales.
 *   **Módulo de Agendas:** Gestión de citas, calendarios segmentados por doctor y asignación de espacios.
-*   **Módulo de Comunicación (WebSockets 🚧):** Infraestructura en tiempo real para soportar un chat interno segmentado con reglas de comunicación estrictas según el rol.
+*   **Módulo de Comunicación (WebSockets):** Infraestructura en tiempo real para soportar un chat interno segmentado con reglas de comunicación estrictas según el rol.
 
 ## Contexto del Proyecto y Mis Aportes
 
