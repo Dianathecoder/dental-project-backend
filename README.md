@@ -29,7 +29,7 @@ Este repositorio es una evolución de un proyecto académico grupal ([versión o
 
 **Mi mayor contribución en esta versión individual ha sido la creación desde cero de toda la capa de seguridad y gestión de usuarios**, la cual no existía en el proyecto original. He rediseñado la arquitectura lógica para convertirla en un sistema integral con control de acceso basado en roles (RBAC). 
 
-Además, he ampliado la base de datos para soportar el **sistema multilenguaje** y las nuevas funcionalidades (personalización de perfiles, registro híbrido manual/Google, y sistema de fichaje). 
+Además, he ampliado la base de datos para soportar el **sistema multilenguaje** y funcionalidades específicas para cada rol . 
 
 Actualmente, **mi desarrollo activo ** se centra en construir la lógica de negocio y los endpoints dedicados para alimentar las pantallas especializadas de cada rol.
 
