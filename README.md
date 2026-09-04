@@ -1,4 +1,4 @@
-#  Dental Project - API REST Backend
+# 🦷 Dental Project - API REST Backend
 
 ![Java](https://img.shields.io/badge/Java-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)
 ![Spring Boot](https://img.shields.io/badge/Spring_Boot-6DB33F?style=for-the-badge&logo=spring-boot&logoColor=white)
@@ -21,29 +21,31 @@ El núcleo de este sistema destaca por su compleja arquitectura de permisos y la
 *   **Módulo Clínico:** Gestión del estado del paciente, historiales médicos y almacenamiento estructurado de Odontogramas.
 *   **Módulo de Logística:** Control y asignación de Boxes (salas), protocolos médicos e inventario de materiales.
 *   **Módulo de Agendas:** Gestión de citas, calendarios segmentados por doctor y asignación de espacios.
-*   **Módulo de Comunicación (WebSockets):** Infraestructura en tiempo real para soportar un chat interno segmentado con reglas de comunicación estrictas según el rol.
-*   **Internacionalización (i18n):** Sistema multilenguaje integrado y preparado para servir el contenido en **Español, Catalán e Inglés**.
+*   ** Internacionalización (i18n):** Sistema multilenguaje integrado y preparado para servir el contenido en **Español, Catalán e Inglés**.
 
-## Contexto del Proyecto y Mis Aportes
+## 📖 Contexto del Proyecto y Mis Aportes
 
 Este repositorio es una evolución de un proyecto académico grupal ([versión original](https://github.com/cassiuste/dynalar_backend)). 
 
 **Mi mayor contribución en esta versión individual ha sido la creación desde cero de toda la capa de seguridad y gestión de usuarios**, la cual no existía en el proyecto original. He rediseñado la arquitectura lógica para convertirla en un sistema integral con control de acceso basado en roles (RBAC). 
 
-Además, he ampliado los endpoints y la base de datos para soportar el **sistema multilenguaje** y las nuevas funcionalidades del frontend, como la personalización de perfiles, el registro híbrido (Manual/Google) y el sistema de fichaje.
+Además, he ampliado la base de datos para soportar el **sistema multilenguaje** y las nuevas funcionalidades (personalización de perfiles, registro híbrido manual/Google, y sistema de fichaje). 
+
+Actualmente, **mi desarrollo activo (🚧)** se centra en construir la lógica de negocio y los endpoints dedicados para alimentar las pantallas especializadas de cada rol.
 
 ###  Seguridad y Autenticación (Construida desde cero)
 *   **Integración de Spring Security:** Configuración de filtros, protección de rutas y manejo de sesiones/tokens para toda la API.
 *   **Autenticación Híbrida:** Implementación completa del flujo de registro e inicio de sesión integrando **Google Login (OAuth2)** junto con un sistema de acceso con credenciales tradicionales.
 *   **Gestión de credenciales seguras:** Lógica para la generación de contraseñas temporales por parte del Administrador para el primer inicio de sesión del personal médico.
 
-###  Funcionalidades y Control de Roles (RBAC)
-He implementado una separación estricta de permisos e interfaces dependiendo del tipo de usuario:
+###  Funcionalidades Específicas por Rol (🚧 En desarrollo continuo)
+Estoy implementando una separación estricta de lógica e interfaces dependiendo del tipo de usuario:
 
-*   ** Administrador (Control Total):** Creación de usuarios, configuración de horarios/fichajes, gestión clínica (Odontogramas, materiales, boxes) y administración del calendario.
-*   ** Auxiliar (Gestión Operativa):** Acceso a herramientas clínicas y calendario, fichaje de jornada, pero sin permisos de configuración global.
-*   ** Doctor (Enfoque Clínico):** Visualización de citas propias, boxes asignados y acceso directo a las fichas de sus pacientes correspondientes.
-*   ** Paciente (Portal de Usuario):** Autogestión de citas y visualización de box/doctor asignado.
+*   ** Administrador (Control Total):** Endpoints para la creación de usuarios, configuración de horarios/fichajes, gestión clínica (Odontogramas, materiales, boxes) y administración del calendario.
+*   ** Auxiliar (Gestión Operativa):** Lógica para el acceso a herramientas clínicas, calendario y fichaje de jornada, aplicando restricciones de configuración global.
+*   ** Doctor (Enfoque Clínico):** Consultas optimizadas para la visualización de citas propias, boxes asignados y acceso directo a las fichas de sus pacientes correspondientes.
+*   ** Paciente (Portal de Usuario):** Desarrollo del flujo backend para la creación y autogestión de citas, así como la visualización de su box/doctor asignado.
+*   ** Chat Interno Segmentado:** Creación de la infraestructura con WebSockets para comunicación interna, aplicando reglas estrictas de visibilidad según el rol.
 
 ##  Tecnologías Utilizadas
 
@@ -52,7 +54,7 @@ He implementado una separación estricta de permisos e interfaces dependiendo de
 *   **Seguridad:** Spring Security con **JWT (JSON Web Tokens)** para autenticación segura basada en tokens.
 *   **Persistencia de Datos:** Spring Data JPA / Hibernate
 *   **Base de Datos:** MySQL
-*   **Comunicación en tiempo real:** WebSockets / STOMP para el chat interno *(En desarrollo 🚧)*
+*   **Comunicación en tiempo real:** WebSockets / STOMP para el chat interno.
 
 ##  Estructura de la Base de Datos
 
