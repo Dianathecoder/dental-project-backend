@@ -23,6 +23,18 @@ El núcleo de este sistema destaca por su compleja arquitectura de permisos y la
 *   **Módulo de Agendas:** Gestión de citas, calendarios segmentados por doctor y asignación de espacios.
 *   **Módulo de Comunicación (WebSockets 🚧):** Infraestructura en tiempo real para soportar un chat interno segmentado con reglas de comunicación estrictas según el rol.
 
+## Contexto del Proyecto y Mis Aportes
+
+Este repositorio es una evolución profunda de un proyecto académico grupal ([versión base](https://github.com/cassiuste/dynalar_backend)). 
+
+**Mi mayor contribución en esta versión individual ha sido la creación desde cero de toda la capa de seguridad y gestión de usuarios**, la cual no existía en el proyecto original. He rediseñado la arquitectura lógica para convertirla en un sistema integral con control de acceso basado en roles (RBAC).
+
+###  Seguridad y Autenticación (Construida desde cero)
+*   **Integración de Spring Security:** Configuración de filtros, protección de rutas y manejo de sesiones/tokens para toda la API.
+*   **Autenticación Híbrida:** Implementación completa del flujo de registro e inicio de sesión integrando **Google Login (OAuth2)** junto con un sistema de acceso con credenciales tradicionales.
+*   **Gestión de credenciales seguras:** Lógica para la generación de contraseñas temporales por parte del Administrador para el primer inicio de sesión del personal médico.
+
+
 ##  Tecnologías Utilizadas
 
 *   **Lenguaje:** Java
@@ -31,7 +43,14 @@ El núcleo de este sistema destaca por su compleja arquitectura de permisos y la
 *   **Persistencia de Datos:** Spring Data JPA / Hibernate
 *   **Base de Datos:** *(Ej: MySQL o PostgreSQL - ¡Cambia esto por la que uses!)*
 *   **Comunicación en tiempo real:** *(Ej: Spring WebSockets / STOMP para el chat)*
+  
+### ⚙️ Funcionalidades y Control de Roles (RBAC)
+He implementado una separación estricta de permisos e interfaces dependiendo del tipo de usuario:
 
+*   ** Administrador (Control Total):** Creación de usuarios, configuración de horarios/fichajes, gestión clínica (Odontogramas, materiales, boxes) y administración del calendario.
+*   ** Auxiliar (Gestión Operativa):** Acceso a herramientas clínicas y calendario, fichaje de jornada, pero sin permisos de configuración global.
+*   ** Doctor (Enfoque Clínico):** Visualización de citas propias, boxes asignados y acceso directo a las fichas de sus pacientes correspondientes.
+*   ** Paciente (Portal de Usuario):** Autogestión de citas y visualización de box/doctor asignado.
 ##  Estructura de la Base de Datos
 
 El proyecto cuenta con un modelo relacional complejo para unir toda la operativa de la clínica. Algunas de las relaciones clave incluyen:
