@@ -62,7 +62,6 @@ El proyecto cuenta con un modelo relacional complejo para unir toda la operativa
 *   Usuarios (1:N) Citas
 *   Citas (1:1) Boxes
 *   Pacientes (1:1) Odontogramas
-*   *(Nota para Diana: Si tienes un diagrama Entidad-Relación (ER), este es el lugar perfecto para añadir la imagen)*
 
 ##  Configuración y Ejecución local
 
