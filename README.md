@@ -31,7 +31,7 @@ Este repositorio es una evolución de un proyecto académico grupal ([versión o
 
 Además, he ampliado la base de datos para soportar el **sistema multilenguaje** y las nuevas funcionalidades (personalización de perfiles, registro híbrido manual/Google, y sistema de fichaje). 
 
-Actualmente, **mi desarrollo activo (🚧)** se centra en construir la lógica de negocio y los endpoints dedicados para alimentar las pantallas especializadas de cada rol.
+Actualmente, **mi desarrollo activo ** se centra en construir la lógica de negocio y los endpoints dedicados para alimentar las pantallas especializadas de cada rol.
 
 ###  Seguridad y Autenticación (Construida desde cero)
 *   **Integración de Spring Security:** Configuración de filtros, protección de rutas y manejo de sesiones/tokens para toda la API.
