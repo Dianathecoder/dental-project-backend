@@ -34,15 +34,14 @@ Este repositorio es una evolución de un proyecto académico grupal (https://git
 *   **Autenticación Híbrida:** Implementación completa del flujo de registro e inicio de sesión integrando **Google Login (OAuth2)** junto con un sistema de acceso con credenciales tradicionales.
 *   **Gestión de credenciales seguras:** Lógica para la generación de contraseñas temporales por parte del Administrador para el primer inicio de sesión del personal médico.
 
-
-##  Tecnologías Utilizadas
+## Tecnologías Utilizadas
 
 *   **Lenguaje:** Java
 *   **Framework Principal:** Spring Boot
-*   **Seguridad:** Spring Security *(Añade aquí si usas JWT (JSON Web Tokens) o sesiones)*
+*   **Seguridad:** Spring Security con **JWT (JSON Web Tokens)** para autenticación segura basada en tokens.
 *   **Persistencia de Datos:** Spring Data JPA / Hibernate
-*   **Base de Datos:** *(Ej: MySQL o PostgreSQL - ¡Cambia esto por la que uses!)*
-*   **Comunicación en tiempo real:** *(Ej: Spring WebSockets / STOMP para el chat)*
+*   **Base de Datos:** MySQL
+*   **Comunicación en tiempo real:** WebSockets / STOMP para el chat interno *(En desarrollo 🚧)*
   
 ### ⚙️ Funcionalidades y Control de Roles (RBAC)
 He implementado una separación estricta de permisos e interfaces dependiendo del tipo de usuario:
