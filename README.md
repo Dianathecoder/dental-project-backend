@@ -43,7 +43,7 @@ Este repositorio es una evolución de un proyecto académico grupal (https://git
 *   **Base de Datos:** MySQL
 *   **Comunicación en tiempo real:** WebSockets / STOMP para el chat interno *(En desarrollo 🚧)*
   
-### ⚙️ Funcionalidades y Control de Roles (RBAC)
+###  Funcionalidades y Control de Roles (RBAC)
 He implementado una separación estricta de permisos e interfaces dependiendo del tipo de usuario:
 
 *   ** Administrador (Control Total):** Creación de usuarios, configuración de horarios/fichajes, gestión clínica (Odontogramas, materiales, boxes) y administración del calendario.
