@@ -1,5 +1,6 @@
 package com.dynalar.dynalar.controller;
 
+import com.dynalar.dynalar.dto.auth.InviteUserRequest;
 import com.dynalar.dynalar.model.user.Role;
 import com.dynalar.dynalar.model.user.User;
 import com.dynalar.dynalar.respository.UserRepository;
@@ -28,24 +29,30 @@ public class UserController {
     private PasswordEncoder passwordEncoder;
 
     // Solo el ADMIN puede crear usuarios del sistema con roles específicos
-    @PostMapping("/create-staff")
+    @PostMapping("/invite-user") 
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
-    public ResponseEntity<?> createStaffUser(@RequestBody User userRequest, @RequestParam Set<Role> roles) {
+    public ResponseEntity<?> createStaffUser(@RequestBody InviteUserRequest request) {
         try {
-            if (userRepository.existsByEmail(userRequest.getEmail())) {
+            if (userRepository.existsByEmail(request.getEmail())) {
                 return ResponseEntity.badRequest().body("El correo ya está registrado.");
             }
 
-            // 1. Generar contraseña temporal limpia
+            //Generar contraseña temporal limpia
             String tempPassword = UUID.randomUUID().toString().substring(0, 8);
 
-            // 2. Configurar usuario
+            //. Configurar usuario
             User newUser = new User();
-            newUser.setName(userRequest.getName());
-            newUser.setSurname(userRequest.getSurname());
-            newUser.setEmail(userRequest.getEmail());
-            newUser.setPassword(passwordEncoder.encode(tempPassword)); // Encriptar para la BD
-            newUser.setRoles(roles);
+            newUser.setName(request.getName());
+            newUser.setSurname(request.getSurname());
+            newUser.setEmail(request.getEmail());
+            newUser.setPassword(passwordEncoder.encode(tempPassword));
+                        newUser.setDni(request.getDni());
+            newUser.setPhone(request.getPhone());
+            newUser.setSex(request.getSex());
+
+          
+            Role roleEnum = Role.valueOf(request.getRole()); 
+            newUser.setRoles(Set.of(roleEnum));
 
             User savedUser = userRepository.save(newUser);
 
@@ -56,6 +63,8 @@ public class UserController {
             savedUser.setPassword(null);
             return ResponseEntity.status(HttpStatus.CREATED).body(savedUser);
 
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body("El rol especificado no es válido.");
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al crear el usuario.");

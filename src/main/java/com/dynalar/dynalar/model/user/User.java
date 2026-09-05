@@ -41,6 +41,13 @@ public class User {
     @Column(unique = true, nullable = false)
     private String email;
 
+    @Column(unique = true)
+    private String dni;
+
+    private String phone;
+
+    private String sex;
+    
     @Column(name = "password_hash")
     
     private String password;                
@@ -155,6 +162,15 @@ public class User {
 	    public void setRoles(Set<Role> roles) {
 	        this.roles = roles;
 	    }
+	    public String getDni() { return dni; }
+	    public void setDni(String dni) { this.dni = dni; }
+
+	    public String getPhone() { return phone; }
+	    public void setPhone(String phone) { this.phone = phone; }
+
+	    public String getSex() { return sex; }
+	    public void setSex(String sex) { this.sex = sex; }
+	    
 	    public int getFailedAttempt() { return failedAttempt; }
 	    public void setFailedAttempt(int failedAttempt) { this.failedAttempt = failedAttempt; }
 
