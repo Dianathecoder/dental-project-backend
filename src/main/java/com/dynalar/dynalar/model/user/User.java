@@ -69,7 +69,14 @@ public class User {
     @Column(name = "rol_name")
     private Set<Role> roles = new HashSet<>();
 
-    
+    @Column(name = "is_logged")
+    private boolean logged = false;
+
+    @Column(name = "login_date")
+    private LocalDateTime loginDate;
+
+    @Column(name = "session_token", length = 512)
+    private String token;
     
     
     @Enumerated(EnumType.STRING)
@@ -162,6 +169,15 @@ public class User {
 	    public void setRoles(Set<Role> roles) {
 	        this.roles = roles;
 	    }
+	    public boolean isLogged() { return logged; }
+	    public void setLogged(boolean logged) { this.logged = logged; }
+
+	    public LocalDateTime getLoginDate() { return loginDate; }
+	    public void setLoginDate(LocalDateTime loginDate) { this.loginDate = loginDate; }
+
+	    public String getToken() { return token; }
+	    public void setToken(String token) { this.token = token; }
+	    
 	    public String getDni() { return dni; }
 	    public void setDni(String dni) { this.dni = dni; }
 

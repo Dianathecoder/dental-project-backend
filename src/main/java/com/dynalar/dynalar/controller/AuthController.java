@@ -7,6 +7,8 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -57,4 +59,19 @@ public class AuthController {
         authService.resetPassword(req.getToken(), req.getNewPassword());
         return ResponseEntity.ok(new MessageResponse("Contraseña restablecida correctamente"));
     }
+    
+    
+    //Uso SecurityContextHolder para saber exactamente quién está pidiendo cerrar sesión a través de su JWT actual
+    @PostMapping("/logout")
+    public ResponseEntity<MessageResponse> logout() {
+        //Obtenemos quién es el usuario actual leyendo su token
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        
+        if (auth != null && auth.getName() != null) {
+            authService.logout(auth.getName());
+        }
+        
+        return ResponseEntity.ok(new MessageResponse("Sesión cerrada correctamente en el servidor."));
+    }
+    
 }

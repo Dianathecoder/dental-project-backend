@@ -14,6 +14,8 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.mail.SimpleMailMessage;
@@ -31,14 +33,18 @@ import java.util.UUID;
 
 @Service
 public class AuthService {
-
+	
+	@Value("${app.superadmin.email}")
+    private String superAdminEmail;
     private final UserRepository userRepo;
     private final PasswordResetTokenRepository resetRepo;
     private final PatientRepository patientRepo; // Añadido para vincular fichas
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
     private final JavaMailSender mailSender;
-
+    @Autowired
+    private UserRepository userRepository;
+    
     @Value("${google.client-id}")
     private String googleClientId;
 
@@ -71,9 +77,12 @@ public class AuthService {
         user.setPassword(passwordEncoder.encode(req.getPassword()));
         
         Set<Role> roles = new HashSet<>();
-        roles.add(Role.ADMIN); // TODO EL QUE SE REGISTRE POR FORMULARIO ES ADMIN
+        if (req.getEmail() != null && req.getEmail().equalsIgnoreCase(superAdminEmail)) {
+            roles.add(Role.SUPERADMIN);
+        } else {
+            roles.add(Role.OWNER); 
+        }
         user.setRoles(roles);
-        
         userRepo.save(user);
 
         return new AuthResponse(jwtService.generateToken(user), user.getId(), user.getName(),
@@ -184,7 +193,11 @@ public class AuthService {
                                 return savedPatientUser;
                             } else {
                                 // No, es alguien orgánico de Play Store.
-                                roles.add(Role.ADMIN);
+                                if (email != null && email.equalsIgnoreCase(superAdminEmail)) {
+                                    roles.add(Role.SUPERADMIN);
+                                } else {
+                                    roles.add(Role.OWNER); // Si es un dueño nuevo que instaló la app
+                                }
                                 newUser.setRoles(roles);
                                 return userRepo.save(newUser);
                             }
@@ -241,6 +254,17 @@ public class AuthService {
     }
 
 
+    public void logout(String email) {
+        User user = userRepository.findByEmail(email).orElse(null);
+        
+        if (user != null) {
+            user.setLogged(false);
+            user.setToken(null);
+            user.setLoginDate(null);
+            
+            userRepository.save(user);
+        }
+    }
     
     private void linkOrCreatePatientRecord(User savedUser, String name, String surname, String email) {
         Optional<Patient> existingPatient = patientRepo.findByEmail(email);
