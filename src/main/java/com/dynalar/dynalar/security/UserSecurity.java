@@ -7,7 +7,6 @@ import org.springframework.stereotype.Component;
 import com.dynalar.dynalar.respository.PatientRepository;
 import com.dynalar.dynalar.respository.UserRepository;
 
-
 @Component("userSecurity")
 public class UserSecurity {
 
@@ -26,7 +25,6 @@ public class UserSecurity {
                 .orElse(false);
     }
 
-
     public boolean isSelfOrStaffOrDoctor(Authentication authentication, Long patientId) {
         if (isStaffOrDoctor(authentication)) return true;
 
@@ -36,14 +34,21 @@ public class UserSecurity {
                 .orElse(false);
     }
 
+    // AÑADIDOS SUPERADMIN Y OWNER
     public boolean isStaff(Authentication authentication) {
         return authentication.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_AUXILIAR"));
+                .anyMatch(a -> a.getAuthority().equals("ROLE_SUPERADMIN")
+                        || a.getAuthority().equals("ROLE_OWNER")
+                        || a.getAuthority().equals("ROLE_ADMIN") 
+                        || a.getAuthority().equals("ROLE_AUXILIAR"));
     }
 
+    // AÑADIDOS SUPERADMIN Y OWNER
     public boolean isStaffOrDoctor(Authentication authentication) {
         return authentication.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN")
+                .anyMatch(a -> a.getAuthority().equals("ROLE_SUPERADMIN")
+                        || a.getAuthority().equals("ROLE_OWNER")
+                        || a.getAuthority().equals("ROLE_ADMIN")
                         || a.getAuthority().equals("ROLE_AUXILIAR")
                         || a.getAuthority().equals("ROLE_DOCTOR"));
     }

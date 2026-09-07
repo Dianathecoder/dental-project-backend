@@ -81,7 +81,10 @@ public class PatientController {
                 newUser.setEmail(patient.getEmail());
                 newUser.setPassword(passwordEncoder.encode(tempPassword));
                 newUser.getRoles().add(Role.PATIENT);
-
+                newUser.setDni(patient.getDni());
+                newUser.setPhone(patient.getPhone());
+                newUser.setSex(patient.getSex().name());                 
+                newUser.getRoles().add(Role.PATIENT);
                 User savedUser = userRepository.save(newUser);
                 patient.setUser(savedUser);
 
@@ -166,7 +169,8 @@ public class PatientController {
                 if (incomingUser.getSurname() != null) existingUser.setSurname(incomingUser.getSurname());
                 if (incomingUser.getEmail() != null) existingUser.setEmail(incomingUser.getEmail());
                 if (incomingUser.getPassword() != null) existingUser.setPassword(incomingUser.getPassword());
-                
+                existingUser.setDni(updatedPatient.getDni());
+                existingUser.setPhone(updatedPatient.getPhone());
                 userRepository.save(existingUser);
             }
             

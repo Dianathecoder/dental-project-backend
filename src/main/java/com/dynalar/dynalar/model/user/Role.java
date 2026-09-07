@@ -1,7 +1,10 @@
 package com.dynalar.dynalar.model.user;
 
+
 public enum Role {
-    ADMIN,
+    SUPERADMIN,  
+    OWNER,      
+    ADMIN,      
     AUXILIAR,
     DOCTOR,
     PATIENT; 
