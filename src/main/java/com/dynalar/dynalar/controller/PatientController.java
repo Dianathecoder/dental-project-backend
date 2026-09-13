@@ -11,6 +11,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -214,4 +215,11 @@ public class PatientController {
             return ResponseEntity.status(404).build();
         }
     }
+    
+    @GetMapping("/doctor/{doctorId}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<Patient>> getDoctorPatients(@PathVariable Long doctorId) {
+        return ResponseEntity.ok(patientRepository.findPatientsByDoctorId(doctorId));
+    }
+    
 }
