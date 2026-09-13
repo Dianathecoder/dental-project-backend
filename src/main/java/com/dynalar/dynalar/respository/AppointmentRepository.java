@@ -15,6 +15,9 @@ import org.springframework.data.domain.Pageable;
 @Repository
 public interface AppointmentRepository extends JpaRepository<Appointment, Long> {
 
+	@Query("SELECT a FROM Appointment a WHERE a.dentist.user.id = :doctorId")
+	List<Appointment> findByDoctorId(@Param("doctorId") Long doctorId);
+	
 	List<Appointment> findByDentistIdAndStartTimeBetween(Long dentistId, LocalDateTime start, LocalDateTime end);
 	List<Appointment> findByBox_NumberAndStartTimeBetween(Integer boxNumber, LocalDateTime start, LocalDateTime end);
 	List<Appointment> findByTreatment_IdAndBox_NumberAndStartTimeBetween(Long treatmentId, Integer boxNumber, LocalDateTime start, LocalDateTime end);
