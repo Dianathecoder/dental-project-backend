@@ -37,7 +37,21 @@ public class UserController {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    // --- NUEVO ENDPOINT PARA OBTENER TODO EL PERSONAL ---
+    
+    @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> getUserById(@PathVariable Long id) {
+        Optional<User> userOptional = userRepository.findById(id);
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            user.setPassword(null); 
+            return ResponseEntity.ok(user);
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuari no trobat.");
+        }
+    }
+    
+
     @GetMapping("/all")
     @PreAuthorize("hasAnyAuthority('ROLE_SUPERADMIN', 'ROLE_OWNER', 'ROLE_ADMIN', 'ROLE_AUXILIAR')")
     public ResponseEntity<List<User>> getAllUsers() {
