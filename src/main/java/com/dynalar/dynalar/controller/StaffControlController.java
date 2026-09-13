@@ -10,7 +10,6 @@ import com.dynalar.dynalar.respository.AbsenceRepository;
 import com.dynalar.dynalar.respository.AttendanceRepository;
 import com.dynalar.dynalar.respository.UserRepository;
 
-// IMPORT CORREGIDO DE SPRING SECURITY (Estaba el de Tomcat por error)
 import org.springframework.security.core.Authentication;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -40,14 +39,12 @@ public class StaffControlController {
     public ResponseEntity<List<AttendanceResponseDTO>> getDailyAttendance(@RequestParam String date) {
         LocalDate localDate = LocalDate.parse(date);
         
-        // Obtener todos los empleados (excluimos pacientes si los tienes en la misma tabla)
         List<User> staffMembers = userRepository.findAll().stream()
                 .filter(u -> u.getRoles().stream().noneMatch(r -> r.toString().contains("PATIENT")))
                 .collect(Collectors.toList());
 
         List<AttendanceResponseDTO> response = new ArrayList<>();
 
-        // Mapear la asistencia de cada empleado para ese día
         for (User user : staffMembers) {
             Attendance attendance = attendanceRepository.findByUserAndDate(user, localDate).orElse(null);
             
@@ -58,13 +55,11 @@ public class StaffControlController {
                     .collect(Collectors.toList());
                     
             String checkIn = (attendance != null && attendance.getCheckInTime() != null) 
-                    ? attendance.getCheckInTime().toString() 
-                    : null;
+                    ? attendance.getCheckInTime().toString() : null;
             
             String sexValue = user.getSex() != null ? user.getSex().toString() : "OTHER";
             String checkOut = (attendance != null && attendance.getCheckOutTime() != null) 
-                    ? attendance.getCheckOutTime().toString() 
-                    : null;
+                    ? attendance.getCheckOutTime().toString() : null;
                     
             response.add(new AttendanceResponseDTO(
                     user.getId(),
@@ -74,7 +69,8 @@ public class StaffControlController {
                     sexValue,
                     date,
                     checkIn,
-                    checkOut
+                    checkOut,
+                    user.getAvatarUrl() 
             ));
         }
 
@@ -96,7 +92,8 @@ public class StaffControlController {
                 a.getUser() != null ? a.getUser().getName() + " " + a.getUser().getSurname() : "Tots",
                 a.getType().name(),
                 a.getStartDate().toString(),
-                a.getEndDate().toString()
+                a.getEndDate().toString(),
+                a.getUser() != null ? a.getUser().getAvatarUrl() : null // <-- AÑADIDO EL AVATAR AQUÍ
         )).collect(Collectors.toList());
 
         return ResponseEntity.ok(response);
@@ -104,26 +101,21 @@ public class StaffControlController {
     
     @PostMapping("/clock")
     public ResponseEntity<?> registerClock(@RequestBody ClockRequestDTO request, Authentication authentication) {
-        // Obtener el usuario actual por su email (extraído del token)
         User user = userRepository.findByEmail(authentication.getName())
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
         
         LocalDate today = LocalDate.now();
         
-        // Buscar si ya hay un registro hoy (usamos findByUserAndDate igual que en el GetMapping)
         Attendance attendance = attendanceRepository.findByUserAndDate(user, today)
                 .orElseGet(() -> {
-                    // Instanciamos uno nuevo si no existe
                     Attendance newAttendance = new Attendance();
                     newAttendance.setUser(user);
                     newAttendance.setDate(today);
                     return newAttendance;
                 });
 
-        // Por defecto, la hora real del servidor
         LocalTime timeToSet = LocalTime.now();
         
-        // Si envían una hora manual y el usuario es ADMIN o OWNER, usamos esa hora
         if (request.getTime() != null && !request.getTime().isEmpty()) {
             boolean isAdmin = user.getRoles().stream()
                     .anyMatch(r -> r.toString().contains("SUPERADMIN") || r.toString().contains("OWNER"));
@@ -133,7 +125,6 @@ public class StaffControlController {
             }
         }
 
-        // Guardamos ENTRADA o SALIDA
         if ("IN".equalsIgnoreCase(request.getType())) {
             attendance.setCheckInTime(timeToSet);
         } else if ("OUT".equalsIgnoreCase(request.getType())) {
