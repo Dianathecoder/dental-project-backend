@@ -137,4 +137,30 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuari no trobat.");
         }
     }
+    @PostMapping("/update-avatar")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> updateAvatar(@RequestBody java.util.Map<String, String> body) {
+        try {
+            String email = SecurityContextHolder.getContext().getAuthentication().getName();
+            Optional<User> userOptional = userRepository.findByEmail(email);
+            
+            if (userOptional.isPresent()) {
+                User user = userOptional.get();
+                // Extraemos la URL o Path que nos manda Android
+                String newAvatarUrl = body.get("avatarUrl");
+                
+                // Actualizamos el usuario y guardamos
+                user.setAvatarUrl(newAvatarUrl);
+                userRepository.save(user);
+                
+                return ResponseEntity.ok(java.util.Map.of("message", "Avatar actualizado correctamente"));
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuario no encontrado.");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al actualizar avatar.");
+        }
+    }
+    
 }

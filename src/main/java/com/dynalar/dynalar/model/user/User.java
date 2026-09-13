@@ -169,6 +169,7 @@ public class User {
 	    public void setRoles(Set<Role> roles) {
 	        this.roles = roles;
 	    }
+	
 	    public boolean isLogged() { return logged; }
 	    public void setLogged(boolean logged) { this.logged = logged; }
 
