@@ -1,30 +1,8 @@
-package com.dynalar.dynalar.model.user;
+package com.dynalar.dynalar.dto;
 
-import java.util.Set;
+import java.util.List;
 
-import com.dynalar.dynalar.model.Treatment;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.Table;
-
-@Entity
-@Table(name = "dentist")
-public class Dentist {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @OneToOne
-    @JoinColumn(name = "usuario_id", referencedColumnName = "id", unique = true)
-    private User user;
+public class DentistAvailabilityDTO {
 
     // --- LUNES ---
     private Boolean mondayMorningActive;
@@ -81,22 +59,14 @@ public class Dentist {
     private String fridayEveningStart;
     private String fridayEveningEnd;
 
-    @ManyToMany
-    @JoinTable(name = "dentist_treatment", 
-               joinColumns = @JoinColumn(name = "dentist_id"), 
-               inverseJoinColumns = @JoinColumn(name = "treatment_id"))
-    @JsonIgnore
-    private Set<Treatment> treatments;
-    
-    public Dentist() {}
+    // --- TRATAMIENTOS ---
+    private List<Long> treatmentIds;
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-    
-    public User getUser() { return user; }
-    public void setUser(User user) { this.user = user; }
+    // ==========================================
+    // GETTERS Y SETTERS
+    // ==========================================
 
-    // --- Lunes ---
+    // Lunes
     public Boolean getMondayMorningActive() { return mondayMorningActive; }
     public void setMondayMorningActive(Boolean mondayMorningActive) { this.mondayMorningActive = mondayMorningActive; }
     public String getMondayMorningStart() { return mondayMorningStart; }
@@ -116,7 +86,7 @@ public class Dentist {
     public String getMondayEveningEnd() { return mondayEveningEnd; }
     public void setMondayEveningEnd(String mondayEveningEnd) { this.mondayEveningEnd = mondayEveningEnd; }
 
-    // --- Martes ---
+    // Martes
     public Boolean getTuesdayMorningActive() { return tuesdayMorningActive; }
     public void setTuesdayMorningActive(Boolean tuesdayMorningActive) { this.tuesdayMorningActive = tuesdayMorningActive; }
     public String getTuesdayMorningStart() { return tuesdayMorningStart; }
@@ -136,7 +106,7 @@ public class Dentist {
     public String getTuesdayEveningEnd() { return tuesdayEveningEnd; }
     public void setTuesdayEveningEnd(String tuesdayEveningEnd) { this.tuesdayEveningEnd = tuesdayEveningEnd; }
 
-    // --- Miércoles ---
+    // Miércoles
     public Boolean getWednesdayMorningActive() { return wednesdayMorningActive; }
     public void setWednesdayMorningActive(Boolean wednesdayMorningActive) { this.wednesdayMorningActive = wednesdayMorningActive; }
     public String getWednesdayMorningStart() { return wednesdayMorningStart; }
@@ -156,7 +126,7 @@ public class Dentist {
     public String getWednesdayEveningEnd() { return wednesdayEveningEnd; }
     public void setWednesdayEveningEnd(String wednesdayEveningEnd) { this.wednesdayEveningEnd = wednesdayEveningEnd; }
 
-    // --- Jueves ---
+    // Jueves
     public Boolean getThursdayMorningActive() { return thursdayMorningActive; }
     public void setThursdayMorningActive(Boolean thursdayMorningActive) { this.thursdayMorningActive = thursdayMorningActive; }
     public String getThursdayMorningStart() { return thursdayMorningStart; }
@@ -176,7 +146,7 @@ public class Dentist {
     public String getThursdayEveningEnd() { return thursdayEveningEnd; }
     public void setThursdayEveningEnd(String thursdayEveningEnd) { this.thursdayEveningEnd = thursdayEveningEnd; }
 
-    // --- Viernes ---
+    // Viernes
     public Boolean getFridayMorningActive() { return fridayMorningActive; }
     public void setFridayMorningActive(Boolean fridayMorningActive) { this.fridayMorningActive = fridayMorningActive; }
     public String getFridayMorningStart() { return fridayMorningStart; }
@@ -196,7 +166,41 @@ public class Dentist {
     public String getFridayEveningEnd() { return fridayEveningEnd; }
     public void setFridayEveningEnd(String fridayEveningEnd) { this.fridayEveningEnd = fridayEveningEnd; }
 
-    // --- Tratamientos ---
-    public Set<Treatment> getTreatments() { return treatments; }
-    public void setTreatments(Set<Treatment> treatments) { this.treatments = treatments; }
+    // ==========================================
+    // MÉTODOS DE COMPATIBILIDAD (LEGACY GETTERS/SETTERS)
+    // ==========================================
+
+    public Boolean getMondayMorning() { return mondayMorningActive; }
+    public void setMondayMorning(Boolean mondayMorning) { this.mondayMorningActive = mondayMorning; }
+
+    public Boolean getMondayAfternoon() { return mondayAfternoonActive; }
+    public void setMondayAfternoon(Boolean mondayAfternoon) { this.mondayAfternoonActive = mondayAfternoon; }
+
+    public Boolean getTuesdayMorning() { return tuesdayMorningActive; }
+    public void setTuesdayMorning(Boolean tuesdayMorning) { this.tuesdayMorningActive = tuesdayMorning; }
+
+    public Boolean getTuesdayAfternoon() { return tuesdayAfternoonActive; }
+    public void setTuesdayAfternoon(Boolean tuesdayAfternoon) { this.tuesdayAfternoonActive = tuesdayAfternoon; }
+
+    public Boolean getWednesdayMorning() { return wednesdayMorningActive; }
+    public void setWednesdayMorning(Boolean wednesdayMorning) { this.wednesdayMorningActive = wednesdayMorning; }
+
+    public Boolean getWednesdayAfternoon() { return wednesdayAfternoonActive; }
+    public void setWednesdayAfternoon(Boolean wednesdayAfternoon) { this.wednesdayAfternoonActive = wednesdayAfternoon; }
+
+    public Boolean getThursdayMorning() { return thursdayMorningActive; }
+    public void setThursdayMorning(Boolean thursdayMorning) { this.thursdayMorningActive = thursdayMorning; }
+
+    public Boolean getThursdayAfternoon() { return thursdayAfternoonActive; }
+    public void setThursdayAfternoon(Boolean thursdayAfternoon) { this.thursdayAfternoonActive = thursdayAfternoon; }
+
+    public Boolean getFridayMorning() { return fridayMorningActive; }
+    public void setFridayMorning(Boolean fridayMorning) { this.fridayMorningActive = fridayMorning; }
+
+    public Boolean getFridayAfternoon() { return fridayAfternoonActive; }
+    public void setFridayAfternoon(Boolean fridayAfternoon) { this.fridayAfternoonActive = fridayAfternoon; }
+
+    // Tratamientos
+    public List<Long> getTreatmentIds() { return treatmentIds; }
+    public void setTreatmentIds(List<Long> treatmentIds) { this.treatmentIds = treatmentIds; }
 }

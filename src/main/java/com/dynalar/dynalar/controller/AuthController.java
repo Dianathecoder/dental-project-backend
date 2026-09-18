@@ -46,7 +46,6 @@ public class AuthController {
     }
 
     //Para recuperar la contraseña
-    
     @PostMapping("/forgot-password")
     public ResponseEntity<MessageResponse> forgotPassword(@RequestBody @Valid ForgotPasswordRequest req) {
         authService.forgotPassword(req.getEmail());
@@ -59,7 +58,6 @@ public class AuthController {
         authService.resetPassword(req.getToken(), req.getNewPassword());
         return ResponseEntity.ok(new MessageResponse("Contraseña restablecida correctamente"));
     }
-    
     
     //Uso SecurityContextHolder para saber exactamente quién está pidiendo cerrar sesión a través de su JWT actual
     @PostMapping("/logout")

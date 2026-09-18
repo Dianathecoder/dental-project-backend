@@ -1,5 +1,7 @@
 package com.dynalar.dynalar.dto.auth;
 
+import java.util.List;
+
 import lombok.Getter;
 import lombok.Setter;
 
@@ -11,8 +13,11 @@ public class InviteUserRequest {
     private String dni;
     private String phone;
     private String sex;
-
-    // --- GETTERS ---
+    private List<Long> treatmentIds;
+    
+    public List<Long> getTreatmentIds() { return treatmentIds; }
+    public void setTreatmentIds(List<Long> treatmentIds) { this.treatmentIds = treatmentIds; }
+    
     public String getName() { return name; }
     public String getSurname() { return surname; }
     public String getEmail() { return email; }
@@ -21,7 +26,6 @@ public class InviteUserRequest {
     public String getPhone() { return phone; }
     public String getSex() { return sex; }
 
-    // --- SETTERS ---
     public void setName(String name) { this.name = name; }
     public void setSurname(String surname) { this.surname = surname; }
     public void setEmail(String email) { this.email = email; }

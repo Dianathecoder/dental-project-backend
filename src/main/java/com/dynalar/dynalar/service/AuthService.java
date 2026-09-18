@@ -34,14 +34,16 @@ import java.util.UUID;
 @Service
 public class AuthService {
 	
-	@Value("${app.superadmin.email}")
+    @Value("${app.superadmin.email}")
     private String superAdminEmail;
+    
     private final UserRepository userRepo;
     private final PasswordResetTokenRepository resetRepo;
-    private final PatientRepository patientRepo; // Añadido para vincular fichas
+    private final PatientRepository patientRepo; 
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
     private final JavaMailSender mailSender;
+    
     @Autowired
     private UserRepository userRepository;
     
@@ -65,7 +67,7 @@ public class AuthService {
         this.mailSender = mailSender;
     }
 
-    //regitro para la clinica siendo admin
+    // Registro para la clinica siendo admin
     public AuthResponse registerClinicAdmin(RegisterRequest req) {
         if (userRepo.existsByEmail(req.getEmail()))
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email ya registrado");
@@ -95,10 +97,9 @@ public class AuthService {
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.UNAUTHORIZED, "Credenciales incorrectas"));
 
-   
         if (!user.isAccountNonLocked()) {
             if (user.getLockTime() != null && user.getLockTime().plusMinutes(10).isBefore(LocalDateTime.now())) {
-            user.setAccountNonLocked(true);
+                user.setAccountNonLocked(true);
                 user.setFailedAttempt(0);
                 user.setLockTime(null);
                 userRepo.save(user);
@@ -126,7 +127,6 @@ public class AuthService {
                     "Credenciales incorrectas. Intento " + attempts + " de 5.");
         }
 
-     
         if (user.getFailedAttempt() > 0) {
             user.setFailedAttempt(0);
             userRepo.save(user);
@@ -142,7 +142,6 @@ public class AuthService {
         );
     }
 
-  
     public AuthResponse googleLogin(String idToken) throws Exception {
         GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(
                 new NetHttpTransport(), GsonFactory.getDefaultInstance())
@@ -165,7 +164,7 @@ public class AuthService {
                             return userRepo.save(u);
                         })
                         .orElseGet(() -> {
-                      //El usuario nuevo
+                            // El usuario nuevo
                             User newUser = new User();
                             newUser.setEmail(email);
                             newUser.setName(givenName != null ? givenName : email);
@@ -176,7 +175,6 @@ public class AuthService {
                             
                             Set<Role> roles = new HashSet<>();
 
-                        
                             Optional<Patient> invitedPatient = patientRepo.findByEmail(email);
                             
                             if (invitedPatient.isPresent()) {
@@ -230,7 +228,7 @@ public class AuthService {
         mailSender.send(message);
     }
 
-    //Reset del password
+    // Reset del password
     public void resetPassword(String token, String newPassword) {
         PasswordResetToken resetToken = resetRepo.findByTokenAndUsedFalse(token)
                 .orElseThrow(() -> new ResponseStatusException(
@@ -242,7 +240,6 @@ public class AuthService {
         User user = resetToken.getUser();
         user.setPassword(passwordEncoder.encode(newPassword));
         
-
         user.setAccountNonLocked(true);
         user.setFailedAttempt(0);
         user.setLockTime(null);
@@ -252,7 +249,6 @@ public class AuthService {
         resetToken.setUsed(true);
         resetRepo.save(resetToken);
     }
-
 
     public void logout(String email) {
         User user = userRepository.findByEmail(email).orElse(null);
