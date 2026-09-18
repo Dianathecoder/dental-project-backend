@@ -1,10 +1,12 @@
 package com.dynalar.dynalar.controller;
 
 import com.dynalar.dynalar.dto.auth.InviteUserRequest;
+import com.dynalar.dynalar.model.Treatment;
 import com.dynalar.dynalar.model.user.Dentist;
 import com.dynalar.dynalar.model.user.Role;
 import com.dynalar.dynalar.model.user.User;
 import com.dynalar.dynalar.respository.DentistRepository;
+import com.dynalar.dynalar.respository.TreatmentRepository;
 import com.dynalar.dynalar.respository.UserRepository;
 import com.dynalar.dynalar.service.EmailService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 import java.util.Optional;
@@ -30,6 +33,9 @@ public class UserController {
 
     @Autowired
     private UserRepository userRepository;
+    
+    @Autowired
+    private TreatmentRepository treatmentRepository;
 
     @Autowired
     private EmailService emailService;
@@ -99,11 +105,22 @@ public class UserController {
 
             User savedUser = userRepository.save(newUser);
             
+            // --- BLOQUE MODIFICADO PARA ASIGNAR LOS TRATAMIENTOS ---
             if (roleEnum == Role.DOCTOR) {
                 Dentist newDentist = new Dentist();
                 newDentist.setUser(savedUser);
+                
+                // Si el frontend envía IDs de tratamientos, los buscamos y se los asignamos
+                if (request.getTreatmentIds() != null && !request.getTreatmentIds().isEmpty()) {
+                    List<Treatment> tratamientos = treatmentRepository.findAllById(request.getTreatmentIds());
+                    newDentist.setTreatments(new HashSet<>(tratamientos));
+                } else {
+                    newDentist.setTreatments(new HashSet<>());
+                }
+                
                 dentistRepository.save(newDentist);
             }
+            // --------------------------------------------------------
             
             try {
                 emailService.sendInitialPassword(savedUser.getEmail(), tempPassword);
@@ -137,6 +154,7 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuari no trobat.");
         }
     }
+    
     @PostMapping("/update-avatar")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> updateAvatar(@RequestBody java.util.Map<String, String> body) {
@@ -160,6 +178,70 @@ public class UserController {
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al actualizar avatar.");
+        }
+    }
+ // Añade este método en UserController.java
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('ROLE_SUPERADMIN', 'ROLE_OWNER', 'ROLE_ADMIN')")
+    public ResponseEntity<?> deleteUser(@PathVariable Long id) {
+        try {
+            Optional<User> userOptional = userRepository.findById(id);
+            if (userOptional.isPresent()) {
+                User user = userOptional.get();
+
+                // 1. Si es Doctor, eliminamos su perfil de Dentista primero para que la BD no bloquee el borrado
+                if (user.getRoles().contains(Role.DOCTOR)) {
+                    Optional<Dentist> dentistOpt = dentistRepository.findByUserId(id);
+                    dentistOpt.ifPresent(dentist -> dentistRepository.delete(dentist));
+                }
+
+                // 2. Ahora sí podemos borrar al usuario de forma segura
+                userRepository.delete(user);
+                
+                return ResponseEntity.ok(java.util.Map.of("message", "Usuari eliminat correctament"));
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuari no trobat.");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al eliminar usuari.");
+        }
+    }
+    @PutMapping("/update/{id}")
+    @PreAuthorize("hasAnyAuthority('ROLE_SUPERADMIN', 'ROLE_OWNER', 'ROLE_ADMIN')")
+    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody InviteUserRequest request) {
+        try {
+            Optional<User> userOpt = userRepository.findById(id);
+            if (userOpt.isPresent()) {
+                User user = userOpt.get();
+                
+                user.setName(request.getName());
+                user.setSurname(request.getSurname());
+                user.setEmail(request.getEmail());
+                user.setDni(request.getDni());
+                user.setPhone(request.getPhone());
+                user.setSex(request.getSex());
+                
+                String cleanRole = request.getRole().replace("ROLE_", "");
+                Role roleEnum = Role.valueOf(cleanRole);
+                user.setRoles(Set.of(roleEnum));
+                
+                userRepository.save(user);
+
+                // Si cambiaron el rol a DOCTOR y no tenía perfil de Dentista, se lo creamos
+                if (roleEnum == Role.DOCTOR && dentistRepository.findByUserId(id).isEmpty()) {
+                    Dentist newDentist = new Dentist();
+                    newDentist.setUser(user);
+                    dentistRepository.save(newDentist);
+                }
+
+                return ResponseEntity.ok(java.util.Map.of("message", "Usuari actualitzat"));
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuari no trobat");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al actualitzar");
         }
     }
     

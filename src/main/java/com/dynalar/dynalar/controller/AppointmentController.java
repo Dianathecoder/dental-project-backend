@@ -39,11 +39,8 @@ import com.dynalar.dynalar.service.WhatsAppService;
 @RequestMapping("/appointment")
 public class AppointmentController {
 
-	
-
 	@Autowired
     private BoxRepository boxRepository;
-
 
     @Autowired
     private WhatsAppService whatsappService;
@@ -59,8 +56,6 @@ public class AppointmentController {
 
 	@Autowired
 	private DentistRepository dentistRepository;
-
-	
 
 	@PostMapping("/auto-assign")
 	@PreAuthorize("@userSecurity.isSelfOrStaffOrDoctor(authentication, #request.patientId)") 
@@ -78,18 +73,21 @@ public class AppointmentController {
 			LocalDateTime requestedEnd = requestedStart.plusMinutes(duration);
 			LocalDateTime requestedEndWithCleaning = requestedEnd.plusMinutes(15);
 
-			java.time.LocalTime morningStart = java.time.LocalTime.of(9, 0);
-			java.time.LocalTime morningEnd = java.time.LocalTime.of(14, 0);
+			java.time.LocalTime morningStart = java.time.LocalTime.of(8, 0);
+			java.time.LocalTime morningEnd = java.time.LocalTime.of(14, 59);
 			java.time.LocalTime afternoonStart = java.time.LocalTime.of(15, 0);
-			java.time.LocalTime afternoonEnd = java.time.LocalTime.of(20, 0);
+			java.time.LocalTime afternoonEnd = java.time.LocalTime.of(19, 59);
+			java.time.LocalTime eveningStart = java.time.LocalTime.of(20, 0);
+			java.time.LocalTime eveningEnd = java.time.LocalTime.of(23, 59);
 
 			java.time.LocalTime reqStartStr = requestedStart.toLocalTime();
 			java.time.LocalTime reqEndStr = requestedEndWithCleaning.toLocalTime();
 
 			boolean isMorning = (reqStartStr.compareTo(morningStart) >= 0 && reqEndStr.compareTo(morningEnd) <= 0);
 			boolean isAfternoon = (reqStartStr.compareTo(afternoonStart) >= 0 && reqEndStr.compareTo(afternoonEnd) <= 0);
+			boolean isEvening = (reqStartStr.compareTo(eveningStart) >= 0 && reqEndStr.compareTo(eveningEnd) <= 0);
 
-			if (!isMorning && !isAfternoon) {
+			if (!isMorning && !isAfternoon && !isEvening) {
 				return ResponseEntity.badRequest().body("La cita más el tiempo de limpieza se sale del horario laboral de la clínica.");
 			}
 
@@ -101,11 +99,26 @@ public class AppointmentController {
 			for (com.dynalar.dynalar.model.user.Dentist dentist : qualifiedDentists) {
 				boolean worksShift = false;
 				switch (dayOfWeek) {
-					case MONDAY: worksShift = isMorning ? Boolean.TRUE.equals(dentist.getMondayMorning()) : Boolean.TRUE.equals(dentist.getMondayAfternoon()); break;
-					case TUESDAY: worksShift = isMorning ? Boolean.TRUE.equals(dentist.getTuesdayMorning()) : Boolean.TRUE.equals(dentist.getTuesdayAfternoon()); break;
-					case WEDNESDAY: worksShift = isMorning ? Boolean.TRUE.equals(dentist.getWednesdayMorning()) : Boolean.TRUE.equals(dentist.getWednesdayAfternoon()); break;
-					case THURSDAY: worksShift = isMorning ? Boolean.TRUE.equals(dentist.getThursdayMorning()) : Boolean.TRUE.equals(dentist.getThursdayAfternoon()); break;
-					case FRIDAY: worksShift = isMorning ? Boolean.TRUE.equals(dentist.getFridayMorning()) : Boolean.TRUE.equals(dentist.getFridayAfternoon()); break;
+					case MONDAY: 
+						worksShift = isMorning ? Boolean.TRUE.equals(dentist.getMondayMorningActive()) : 
+						             (isAfternoon ? Boolean.TRUE.equals(dentist.getMondayAfternoonActive()) : Boolean.TRUE.equals(dentist.getMondayEveningActive())); 
+						break;
+					case TUESDAY: 
+						worksShift = isMorning ? Boolean.TRUE.equals(dentist.getTuesdayMorningActive()) : 
+						             (isAfternoon ? Boolean.TRUE.equals(dentist.getTuesdayAfternoonActive()) : Boolean.TRUE.equals(dentist.getTuesdayEveningActive())); 
+						break;
+					case WEDNESDAY: 
+						worksShift = isMorning ? Boolean.TRUE.equals(dentist.getWednesdayMorningActive()) : 
+						             (isAfternoon ? Boolean.TRUE.equals(dentist.getWednesdayAfternoonActive()) : Boolean.TRUE.equals(dentist.getWednesdayEveningActive())); 
+						break;
+					case THURSDAY: 
+						worksShift = isMorning ? Boolean.TRUE.equals(dentist.getThursdayMorningActive()) : 
+						             (isAfternoon ? Boolean.TRUE.equals(dentist.getThursdayAfternoonActive()) : Boolean.TRUE.equals(dentist.getThursdayEveningActive())); 
+						break;
+					case FRIDAY: 
+						worksShift = isMorning ? Boolean.TRUE.equals(dentist.getFridayMorningActive()) : 
+						             (isAfternoon ? Boolean.TRUE.equals(dentist.getFridayAfternoonActive()) : Boolean.TRUE.equals(dentist.getFridayEveningActive())); 
+						break;
 					default: worksShift = false;
 				}
 
@@ -369,7 +382,8 @@ public class AppointmentController {
 					java.time.LocalTime.of(13, 0), java.time.LocalTime.of(13, 30),
 					java.time.LocalTime.of(15, 0), java.time.LocalTime.of(15, 30), java.time.LocalTime.of(16, 0), java.time.LocalTime.of(16, 30),
 					java.time.LocalTime.of(17, 0), java.time.LocalTime.of(17, 30), java.time.LocalTime.of(18, 0), java.time.LocalTime.of(18, 30),
-					java.time.LocalTime.of(19, 0), java.time.LocalTime.of(19, 30)
+					java.time.LocalTime.of(19, 0), java.time.LocalTime.of(19, 30),
+					java.time.LocalTime.of(20, 0), java.time.LocalTime.of(20, 30), java.time.LocalTime.of(21, 0), java.time.LocalTime.of(21, 30)
 				};
 
 				java.util.List<java.time.LocalTime> timesToCheck = new java.util.ArrayList<>(java.util.Arrays.asList(possibleTimesArray));
@@ -383,20 +397,36 @@ public class AppointmentController {
 					java.time.LocalDateTime slotEnd = slotStart.plusMinutes(totalDuration);
 					
 					boolean isMorningSlot = slotStart.getHour() < 14 && slotEnd.toLocalTime().compareTo(java.time.LocalTime.of(14, 0)) <= 0;
-					boolean isAfternoonSlot = slotStart.getHour() >= 15 && slotEnd.toLocalTime().compareTo(java.time.LocalTime.of(20, 0)) <= 0;
+					boolean isAfternoonSlot = slotStart.getHour() >= 15 && slotEnd.toLocalTime().compareTo(java.time.LocalTime.of(19, 59)) <= 0;
+					boolean isEveningSlot = slotStart.getHour() >= 20 && slotEnd.toLocalTime().compareTo(java.time.LocalTime.of(23, 59)) <= 0;
 
-					if (!isMorningSlot && !isAfternoonSlot) continue;
+					if (!isMorningSlot && !isAfternoonSlot && !isEveningSlot) continue;
 
 					boolean isSlotAvailable = false;
 
 					for (com.dynalar.dynalar.model.user.Dentist dentist : qualifiedDentists) {
 						boolean worksShift = false;
 						switch (dayOfWeek) {
-							case MONDAY: worksShift = isMorningSlot ? Boolean.TRUE.equals(dentist.getMondayMorning()) : Boolean.TRUE.equals(dentist.getMondayAfternoon()); break;
-							case TUESDAY: worksShift = isMorningSlot ? Boolean.TRUE.equals(dentist.getTuesdayMorning()) : Boolean.TRUE.equals(dentist.getTuesdayAfternoon()); break;
-							case WEDNESDAY: worksShift = isMorningSlot ? Boolean.TRUE.equals(dentist.getWednesdayMorning()) : Boolean.TRUE.equals(dentist.getWednesdayAfternoon()); break;
-							case THURSDAY: worksShift = isMorningSlot ? Boolean.TRUE.equals(dentist.getThursdayMorning()) : Boolean.TRUE.equals(dentist.getThursdayAfternoon()); break;
-							case FRIDAY: worksShift = isMorningSlot ? Boolean.TRUE.equals(dentist.getFridayMorning()) : Boolean.TRUE.equals(dentist.getFridayAfternoon()); break;
+							case MONDAY: 
+								worksShift = isMorningSlot ? Boolean.TRUE.equals(dentist.getMondayMorningActive()) : 
+								             (isAfternoonSlot ? Boolean.TRUE.equals(dentist.getMondayAfternoonActive()) : Boolean.TRUE.equals(dentist.getMondayEveningActive())); 
+								break;
+							case TUESDAY: 
+								worksShift = isMorningSlot ? Boolean.TRUE.equals(dentist.getTuesdayMorningActive()) : 
+								             (isAfternoonSlot ? Boolean.TRUE.equals(dentist.getTuesdayAfternoonActive()) : Boolean.TRUE.equals(dentist.getTuesdayEveningActive())); 
+								break;
+							case WEDNESDAY: 
+								worksShift = isMorningSlot ? Boolean.TRUE.equals(dentist.getWednesdayMorningActive()) : 
+								             (isAfternoonSlot ? Boolean.TRUE.equals(dentist.getWednesdayAfternoonActive()) : Boolean.TRUE.equals(dentist.getWednesdayEveningActive())); 
+								break;
+							case THURSDAY: 
+								worksShift = isMorningSlot ? Boolean.TRUE.equals(dentist.getThursdayMorningActive()) : 
+								             (isAfternoonSlot ? Boolean.TRUE.equals(dentist.getThursdayAfternoonActive()) : Boolean.TRUE.equals(dentist.getThursdayEveningActive())); 
+								break;
+							case FRIDAY: 
+								worksShift = isMorningSlot ? Boolean.TRUE.equals(dentist.getFridayMorningActive()) : 
+								             (isAfternoonSlot ? Boolean.TRUE.equals(dentist.getFridayAfternoonActive()) : Boolean.TRUE.equals(dentist.getFridayEveningActive())); 
+								break;
 							default: worksShift = false;
 						}
 
