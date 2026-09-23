@@ -4,6 +4,7 @@ import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -25,6 +26,9 @@ public class Material {
 	private Integer availableStock;
 	
 	private Integer minimumStock;
+	
+	@Column(name = "category")
+    private String category;
 	
 	@OneToMany(mappedBy = "material", fetch = FetchType.LAZY)
 	@JsonIgnore
@@ -63,6 +67,14 @@ public class Material {
 	
 	public void setMinimumStock(Integer minimumStock) {
 		this.minimumStock = minimumStock;
+	}
+
+	public String getCategory() {
+		return category;
+	}
+
+	public void setCategory(String category) {
+		this.category = category;
 	}
 
 	public Set<TreatmentMaterial> getTreatments() {

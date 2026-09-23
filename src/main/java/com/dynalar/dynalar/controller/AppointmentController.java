@@ -33,6 +33,7 @@ import com.dynalar.dynalar.respository.BoxRepository;
 import com.dynalar.dynalar.respository.DentistRepository;
 import com.dynalar.dynalar.respository.PatientRepository;
 import com.dynalar.dynalar.respository.TreatmentRepository;
+import com.dynalar.dynalar.respository.AbsenceRepository;
 import com.dynalar.dynalar.service.WhatsAppService;
 
 @RestController
@@ -56,6 +57,9 @@ public class AppointmentController {
 
 	@Autowired
 	private DentistRepository dentistRepository;
+	
+	@Autowired
+	private AbsenceRepository absenceRepository;
 
 	@PostMapping("/auto-assign")
 	@PreAuthorize("@userSecurity.isSelfOrStaffOrDoctor(authentication, #request.patientId)") 
@@ -93,10 +97,27 @@ public class AppointmentController {
 
 			List<com.dynalar.dynalar.model.user.Dentist> qualifiedDentists = dentistRepository.findByTreatments_Id(treatment.getId());
 
+			// Filtrar por el ID de usuario del doctor si se proporciona
+			if (request.getDoctorId() != null) {
+				qualifiedDentists = qualifiedDentists.stream()
+					.filter(d -> d.getUser() != null && d.getUser().getId().equals(request.getDoctorId()))
+					.toList();
+			}
+
 			com.dynalar.dynalar.model.user.Dentist selectedDentist = null;
 			java.time.DayOfWeek dayOfWeek = requestedStart.getDayOfWeek();
+			java.time.LocalDate requestedDate = requestedStart.toLocalDate();
 
 			for (com.dynalar.dynalar.model.user.Dentist dentist : qualifiedDentists) {
+				if (dentist.getUser() == null) continue;
+
+				boolean isAbsent = false;
+				try {
+					isAbsent = absenceRepository.isStaffAbsentOnDate(dentist.getUser().getId(), requestedDate);
+				} catch (Exception ignored) {}
+
+				if (isAbsent) continue;
+
 				boolean worksShift = false;
 				switch (dayOfWeek) {
 					case MONDAY: 
@@ -149,32 +170,29 @@ public class AppointmentController {
 				return ResponseEntity.status(HttpStatus.CONFLICT).body("Sin Doctores Disponibles el dia y hora seleccionada. Pruebe otro dia u otra hora.");
 			}
 
-			// Verifica que hay un box libre para esa hora
 			LocalDateTime startOfDay = requestedStart.toLocalDate().atStartOfDay();
 			LocalDateTime endOfDay = startOfDay.plusDays(1).minusNanos(1);
 			List<Box> allBoxes = (List<Box>) boxRepository.findAll();
 	        Box selectedBox = null;
 
-	        for (Box box : allBoxes) {
-	            List<Appointment> boxApps = appointmentRepository.findByBox_NumberAndStartTimeBetween(box.getNumber(), startOfDay, endOfDay);
-	            boolean boxOverlap = false;
-	            for (Appointment app : boxApps) {
-	                LocalDateTime appEndWithCleaning = app.getEndTime().plusMinutes(15);
-	                if (requestedStart.isBefore(appEndWithCleaning) && requestedEndWithCleaning.isAfter(app.getStartTime())) {
-	                    boxOverlap = true;
+	        if (!allBoxes.isEmpty()) {
+	            for (Box box : allBoxes) {
+	                List<Appointment> boxApps = appointmentRepository.findByBox_NumberAndStartTimeBetween(box.getNumber(), startOfDay, endOfDay);
+	                boolean boxOverlap = false;
+	                for (Appointment app : boxApps) {
+	                    LocalDateTime appEndWithCleaning = app.getEndTime().plusMinutes(15);
+	                    if (requestedStart.isBefore(appEndWithCleaning) && requestedEndWithCleaning.isAfter(app.getStartTime())) {
+	                        boxOverlap = true;
+	                        break;
+	                    }
+	                }
+	                if (!boxOverlap) {
+	                    selectedBox = box;
 	                    break;
 	                }
 	            }
-	            if (!boxOverlap) {
-	                selectedBox = box;
-	                break;
-	            }
 	        }
 
-	        if (selectedBox == null) {
-	            return ResponseEntity.status(HttpStatus.CONFLICT).body("No hay Boxes (sillones) disponibles para esta hora.");
-	        }
-			
 			Appointment newAppointment = new Appointment();
 			newAppointment.setPatient(patient);
 			newAppointment.setTreatment(treatment);
@@ -187,7 +205,6 @@ public class AppointmentController {
 
 			Appointment savedAppointment = appointmentRepository.save(newAppointment);
 			
-			//Notificacion Wharsapp
 			if (patient != null) {
 			    whatsappService.sendAppointmentNotification(patient, savedAppointment);
 			}
@@ -250,11 +267,9 @@ public class AppointmentController {
         try {
             Appointment newAppointment = appointmentRepository.save(appointment);
             
-            // --- AÑADIR ESTE BLOQUE ---
             if (newAppointment.getPatient() != null) {
                 whatsappService.sendAppointmentNotification(newAppointment.getPatient(), newAppointment);
             }
-            // --------------------------
 
             return ResponseEntity.status(HttpStatus.CREATED).body(newAppointment);
         } catch (Exception e) {
@@ -354,6 +369,13 @@ public class AppointmentController {
 			
 			int totalDuration = treatment.getDurationMinutes() + 15;
 			List<com.dynalar.dynalar.model.user.Dentist> qualifiedDentists = dentistRepository.findByTreatments_Id(treatment.getId());
+
+			if (request.getDoctorId() != null) {
+				qualifiedDentists = qualifiedDentists.stream()
+					.filter(d -> d.getUser() != null && d.getUser().getId().equals(request.getDoctorId()))
+					.toList();
+			}
+
 			List<Box> allBoxes = (List<Box>) boxRepository.findAll();
 
 			java.util.Map<String, java.util.List<String>> availableSlotsPerDay = new java.util.TreeMap<>();
@@ -405,6 +427,15 @@ public class AppointmentController {
 					boolean isSlotAvailable = false;
 
 					for (com.dynalar.dynalar.model.user.Dentist dentist : qualifiedDentists) {
+						if (dentist.getUser() == null) continue;
+
+						boolean isAbsent = false;
+						try {
+							isAbsent = absenceRepository.isStaffAbsentOnDate(dentist.getUser().getId(), currentDate);
+						} catch (Exception ignored) {}
+
+						if (isAbsent) continue;
+
 						boolean worksShift = false;
 						switch (dayOfWeek) {
 							case MONDAY: 
@@ -433,11 +464,13 @@ public class AppointmentController {
 						if (worksShift) {
 							List<Appointment> existingApps = dentistAppsMap.get(dentist.getId());
 							boolean hasOverlap = false;
-							for (Appointment app : existingApps) {
-								LocalDateTime appEndWithCleaning = app.getEndTime().plusMinutes(15);
-								if (slotStart.isBefore(appEndWithCleaning) && slotEnd.isAfter(app.getStartTime())) {
-									hasOverlap = true;
-									break;
+							if (existingApps != null) {
+								for (Appointment app : existingApps) {
+									LocalDateTime appEndWithCleaning = app.getEndTime().plusMinutes(15);
+									if (slotStart.isBefore(appEndWithCleaning) && slotEnd.isAfter(app.getStartTime())) {
+										hasOverlap = true;
+										break;
+									}
 								}
 							}
 							if (!hasOverlap) {
@@ -449,38 +482,45 @@ public class AppointmentController {
 
 					if (isSlotAvailable) {
 					    boolean hasAvailableBox = false;
-					    for (Box box : allBoxes) {
-					        List<Appointment> boxApps = boxAppsMap.get(box.getNumber());
-					        boolean boxOverlap = false;
-					        boolean hasAppsAfter = false;
 
-					        for (Appointment app : boxApps) {
-					            LocalDateTime appEndWithCleaning = app.getEndTime().plusMinutes(15);
-					            if (slotStart.isBefore(appEndWithCleaning) && slotEnd.isAfter(app.getStartTime())) {
-					                boxOverlap = true;
-					            }
-					            if (hasInfectiousDisease && app.getStartTime().isAfter(slotStart)) {
-					                hasAppsAfter = true;
-					            }
-					        }
+					    if (allBoxes.isEmpty()) {
+					        hasAvailableBox = true;
+					    } else {
+					        for (Box box : allBoxes) {
+					            List<Appointment> boxApps = boxAppsMap.get(box.getNumber());
+					            boolean boxOverlap = false;
+					            boolean hasAppsAfter = false;
 
-					        if (!boxOverlap && !hasAppsAfter) {
-					            boolean hasSameTreatmentAfter = false;
-					            if (hasInfectiousDisease) {
-					                for (Appointment tApp : treatmentAppsToday) {
-					                    if (tApp.getStartTime().isAfter(slotStart)) {
-					                        hasSameTreatmentAfter = true;
-					                        break;
+					            if (boxApps != null) {
+					                for (Appointment app : boxApps) {
+					                    LocalDateTime appEndWithCleaning = app.getEndTime().plusMinutes(15);
+					                    if (slotStart.isBefore(appEndWithCleaning) && slotEnd.isAfter(app.getStartTime())) {
+					                        boxOverlap = true;
+					                    }
+					                    if (hasInfectiousDisease && app.getStartTime().isAfter(slotStart)) {
+					                        hasAppsAfter = true;
 					                    }
 					                }
 					            }
 
-					            if (!hasSameTreatmentAfter) {
-					                hasAvailableBox = true;
-					                break;
-					            }
-					        }
-					    }
+					            if (!boxOverlap && !hasAppsAfter) {
+					                boolean hasSameTreatmentAfter = false;
+					                if (hasInfectiousDisease) {
+					                    for (Appointment tApp : treatmentAppsToday) {
+					                        if (tApp.getStartTime().isAfter(slotStart)) {
+					                            hasSameTreatmentAfter = true;
+                            					break;
+                        					}
+                    					}
+                					}
+
+                					if (!hasSameTreatmentAfter) {
+                    					hasAvailableBox = true;
+                    					break;
+                					}
+            					}
+        					}
+    					}
 					    
 					    if (hasAvailableBox) {
 					        dailySlots.add(String.format("%02d:%02d", slotTime.getHour(), slotTime.getMinute()));
@@ -504,6 +544,17 @@ public class AppointmentController {
 		} catch (Exception e) {
 			e.printStackTrace();
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error calculando los huecos.");
+		}
+	}
+	
+	@GetMapping("/doctor/{doctorId}")
+	public @ResponseBody ResponseEntity<List<Appointment>> getAppointmentsByDoctorId(@PathVariable Long doctorId) {
+		try {
+			List<Appointment> appointments = appointmentRepository.findByDoctorId(doctorId);
+			return ResponseEntity.ok(appointments);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return ResponseEntity.status(404).build();
 		}
 	}
 }
