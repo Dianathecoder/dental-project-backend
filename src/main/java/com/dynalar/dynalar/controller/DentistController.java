@@ -212,13 +212,16 @@ public class DentistController {
     }
 
     @GetMapping("/treatment/{treatmentId}")
-    public ResponseEntity<List<Dentist>> getDentistsByTreatment(@PathVariable Long treatmentId) {
+    public ResponseEntity<List<User>> getDentistsByTreatment(@PathVariable Long treatmentId) {
         try {
             List<Dentist> dentists = dentistRepository.findByTreatments_Id(treatmentId);
-            if (dentists.isEmpty()) {
-                return ResponseEntity.noContent().build();
-            }
-            return ResponseEntity.ok(dentists);
+            
+        
+            List<User> users = dentists.stream()
+                                       .map(Dentist::getUser)
+                                       .collect(Collectors.toList());
+                                       
+            return ResponseEntity.ok(users);
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.internalServerError().build();
@@ -262,4 +265,5 @@ public class DentistController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
 }
