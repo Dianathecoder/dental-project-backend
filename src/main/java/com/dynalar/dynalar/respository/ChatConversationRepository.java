@@ -2,7 +2,7 @@ package com.dynalar.dynalar.respository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.dynalar.dynalar.ChatConversation.ChatConversation;
+import com.dynalar.dynalar.chatConversation.ChatConversation;
 
 import java.util.List;
 

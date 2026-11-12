@@ -1,4 +1,4 @@
-package com.dynalar.dynalar.ChatConversation;
+package com.dynalar.dynalar.chatConversation;
 
 import java.time.LocalDateTime;
 import java.util.List;
