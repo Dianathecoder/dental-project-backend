@@ -5,9 +5,11 @@ import com.dynalar.dynalar.model.Treatment;
 import com.dynalar.dynalar.model.user.Dentist;
 import com.dynalar.dynalar.model.user.Role;
 import com.dynalar.dynalar.model.user.User;
+import com.dynalar.dynalar.model.patient.Patient;
 import com.dynalar.dynalar.respository.DentistRepository;
 import com.dynalar.dynalar.respository.TreatmentRepository;
 import com.dynalar.dynalar.respository.UserRepository;
+import com.dynalar.dynalar.respository.PatientRepository;
 import com.dynalar.dynalar.service.EmailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -33,6 +35,9 @@ public class UserController {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private PatientRepository patientRepository;
     
     @Autowired
     private TreatmentRepository treatmentRepository;
@@ -182,12 +187,27 @@ public class UserController {
     }
  // Añade este método en UserController.java
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('ROLE_SUPERADMIN', 'ROLE_OWNER', 'ROLE_ADMIN')")
     public ResponseEntity<?> deleteUser(@PathVariable Long id) {
         try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Autenticación requerida.");
+            }
             Optional<User> userOptional = userRepository.findById(id);
             if (userOptional.isPresent()) {
                 User user = userOptional.get();
+
+                boolean isAdministrator = authentication.getAuthorities().stream().anyMatch(authority ->
+                        authority.getAuthority().equals("ROLE_SUPERADMIN")
+                                || authority.getAuthority().equals("ROLE_OWNER")
+                                || authority.getAuthority().equals("ROLE_ADMIN"));
+                boolean isOwnAccount = authentication.getName().equalsIgnoreCase(user.getEmail());
+                if (!isAdministrator && !isOwnAccount) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body("No tienes permiso para eliminar esta cuenta.");
+                }
+
+                // Borrar primero el perfil de paciente para aplicar sus relaciones en cascada.
+                patientRepository.findByUser_Id(id).ifPresent(patientRepository::delete);
 
                 // 1. Si es Doctor, eliminamos su perfil de Dentista primero para que la BD no bloquee el borrado
                 if (user.getRoles().contains(Role.DOCTOR)) {

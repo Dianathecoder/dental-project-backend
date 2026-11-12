@@ -16,6 +16,7 @@ import java.util.Optional;
 public interface PatientRepository extends JpaRepository<Patient, Long> {
 
 	Optional<Patient> findByEmail(String email);
+	Optional<Patient> findByUser_Id(Long userId);
 	
 	@Query("SELECT DISTINCT a.patient FROM Appointment a WHERE a.dentist.user.id = :doctorId")
 	List<Patient> findPatientsByDoctorId(@Param("doctorId") Long doctorId);
